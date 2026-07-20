@@ -5,16 +5,23 @@ Cài đặt (trên mỗi máy client):
     pip install requests numpy
 
 Chạy (thay <client_id> = 0..4 và <dia_chi_server> = IP máy server):
-    python client_http.py <client_id> <dia_chi_server>
+    python client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]
 
 Ví dụ (client số 2, server ở 192.168.1.10 cổng 5000):
     python client_http.py 2 http://192.168.1.10:5000
 
+Mặc định đọc dữ liệu riêng từ file "du_lieu_client_<client_id>.npz" nằm
+CÙNG THƯ MỤC với script này. File này KHÔNG lấy qua mạng — nó phải được
+copy sẵn vào máy client bằng tay/USB/scp (chạy chuan_bi_du_lieu.py ở máy
+chuẩn bị dữ liệu để tạo ra các file này, xem hướng dẫn trong file đó).
+Đây là điểm khác biệt quan trọng so với bản demo: dữ liệu riêng của client
+không bao giờ rời khỏi máy client hay đi qua server.
+
 Máy này KHÔNG cần dataset/ hay server/ — chỉ cần client/, nen_mat_ma.py,
-giao_tiep.py và file này. Dữ liệu riêng + tập validation được lấy từ server
-lúc khởi động (mô phỏng: dữ liệu vốn đã có sẵn cục bộ ở máy client).
+giao_tiep.py, file .npz riêng của nó, và file client_http.py này.
 """
 
+import os
 import sys
 
 import numpy as np
@@ -37,23 +44,29 @@ class _Cfg:
 
 def main():
     if len(sys.argv) < 3:
-        print("Dùng: python client_http.py <client_id> <dia_chi_server>")
+        print("Dùng: python client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]")
         print("Ví dụ: python client_http.py 0 http://192.168.1.10:5000")
         sys.exit(1)
 
     client_id = int(sys.argv[1])
     dia_chi = sys.argv[2].rstrip("/")
+    duong_dan_du_lieu = sys.argv[3] if len(sys.argv) > 3 else f"du_lieu_client_{client_id}.npz"
 
-    # --- Lấy cấu hình + dữ liệu RIÊNG của mình + tập validation CHUNG ---
+    if not os.path.exists(duong_dan_du_lieu):
+        print(f"Không tìm thấy {duong_dan_du_lieu} — hãy copy file dữ liệu riêng của client "
+              f"{client_id} vào máy này trước (xem chuan_bi_du_lieu.py để tạo file).")
+        sys.exit(1)
+
+    # --- Lấy cấu hình từ server + dữ liệu RIÊNG từ file cục bộ (không qua mạng) ---
     cfg_json = requests.get(f"{dia_chi}/cau-hinh", timeout=30).json()
     if not (0 <= client_id < cfg_json["so_client"]):
         print(f"client_id phải trong khoảng 0..{cfg_json['so_client'] - 1}")
         sys.exit(1)
 
-    du_lieu = requests.get(f"{dia_chi}/du-lieu/{client_id}", timeout=30).json()
-    X = np.array(du_lieu["X"], dtype=np.float64)
-    y = np.array(du_lieu["y"], dtype=np.int64)
+    _d = np.load(duong_dan_du_lieu)
+    X, y = _d["X"], _d["y"]
 
+    # --- Tập validation CHUNG (công khai) vẫn lấy từ server ---
     validation = requests.get(f"{dia_chi}/du-lieu-validation", timeout=30).json()
     X_val = np.array(validation["X"], dtype=np.float64)
     y_val = np.array(validation["y"], dtype=np.int64)

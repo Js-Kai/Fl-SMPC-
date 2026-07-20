@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+
+# Dữ liệu sinh ra bởi chuan_bi_du_lieu.py — tái tạo bằng cách chạy lại script,
+# và theo đúng thiết kế không nên nằm chung trên máy server/kho mã nguồn.
+du_lieu_client_*.npz
+du_lieu_server.npz
+du_lieu_validation.npz
