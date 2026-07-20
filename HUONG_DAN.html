@@ -9,7 +9,8 @@
     --bg: #faf9f5; --card: #ffffff; --ink: #24232049; --ink0:#242320;
     --muted: #6b6a63; --line: #e5e3da; --accent: #1f6e56; --accent-bg:#e1f5ee;
     --client:#185fa5; --client-bg:#e6f1fb; --server:#993c1d; --server-bg:#faece7;
-    --data:#5f5e5a; --data-bg:#f1efe8; --code-bg:#f4f4f2;
+    --data:#5f5e5a; --data-bg:#f1efe8; --shared:#7a5c1e; --shared-bg:#fbf1de;
+    --code-bg:#f4f4f2;
   }
   * { box-sizing: border-box; }
   body {
@@ -38,12 +39,14 @@
   .tag-client { background: var(--client-bg); color: var(--client); }
   .tag-server { background: var(--server-bg); color: var(--server); }
   .tag-data { background: var(--data-bg); color: var(--data); }
+  .tag-shared { background: var(--shared-bg); color: var(--shared); }
   .tree { font-family: "SF Mono", Consolas, monospace; font-size: 13.5px;
           line-height: 1.9; background: var(--card); border: 1px solid var(--line);
           border-radius: 12px; padding: 18px 22px; }
   .tree .f-data { color: var(--data); font-weight: 600; }
   .tree .f-client { color: var(--client); font-weight: 600; }
   .tree .f-server { color: var(--server); font-weight: 600; }
+  .tree .f-shared { color: var(--shared); font-weight: 600; }
   .tree .cmt { color: var(--muted); }
   .steps { counter-reset: step; list-style: none; padding: 0; }
   .steps li { counter-increment: step; position: relative; padding: 8px 0 8px 44px; }
@@ -66,28 +69,41 @@
           border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14.5px; }
   kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 2px;
         border-radius: 5px; padding: 1px 7px; font-size: 13px; font-family: monospace; }
+  .toggle-tabs { display: flex; gap: 8px; margin: 18px 0 6px; }
+  .toggle-tabs .pill { padding: 4px 14px; border-radius: 20px; font-size: 13px;
+        font-weight: 600; background: var(--code-bg); color: var(--muted); }
 </style>
 </head>
 <body>
 
 <h1>FL-SMPC++ — Tái dựng theo Hình 3</h1>
-<p class="sub">Hệ thống được chia thành 3 thư mục rõ ràng: <b>dataset</b>, <b>client</b>, <b>server</b> — để dễ hiểu và dễ chỉnh sửa.</p>
+<p class="sub">Hệ thống được chia thành 3 thư mục rõ ràng: <b>dataset</b>, <b>client</b>, <b>server</b> — để dễ hiểu và dễ chỉnh sửa. Có <b>2 cách chạy</b>: mô phỏng 1 máy (nhanh, để hiểu logic) hoặc triển khai thật qua HTTP trên nhiều máy.</p>
 
 <div class="card">
-<p style="margin:16px 0;"><b>Chạy nhanh:</b> mở terminal trong thư mục này rồi gõ:</p>
+<p style="margin:16px 0;"><b>Cách 1 — Mô phỏng nhanh trên 1 máy:</b></p>
 <pre><code>python chay.py</code></pre>
-<p style="margin:16px 0;">Cần <code>numpy</code> và <code>scikit-learn</code>. Chạy khoảng 40 giây, in ra từng vòng huấn luyện.</p>
+<p style="margin:16px 0;">Cần <code>numpy</code> và <code>scikit-learn</code>. Chạy khoảng vài giây, in ra từng vòng huấn luyện. Đây là cách nhanh nhất để xem toàn bộ cơ chế hoạt động — mọi "client" chỉ là object Python chạy tuần tự trong cùng 1 tiến trình.</p>
+</div>
+
+<div class="card">
+<p style="margin:16px 0;"><b>Cách 2 — Triển khai thật trên nhiều máy (HTTP):</b> xem mục 7 bên dưới. Dùng khi có nhiều máy/máy ảo đóng vai client thật, kết nối tới 1 máy server thật qua mạng.</p>
 </div>
 
 <h2>1. Cấu trúc thư mục</h2>
-<p>Ba thư mục màu tương ứng ba phần của Hình 3. Các file ở gốc là phần dùng chung.</p>
+<p>Ba thư mục màu tương ứng ba phần của Hình 3. Các file ở gốc là phần dùng chung hoặc phục vụ triển khai mạng thật.</p>
 
 <div class="tree">
 flsmpcpp_hinh3/<br>
 ├── <b>HUONG_DAN.html</b> <span class="cmt">← file bạn đang đọc</span><br>
-├── <b>chay.py</b> <span class="cmt">← chạy file này để khởi động hệ thống</span><br>
+├── <b>sodo.html</b> <span class="cmt">← sơ đồ trực quan các bước triển khai</span><br>
+├── <b>chay.py</b> <span class="cmt">← MÔ PHỎNG: chạy 1 máy, mọi client chạy tuần tự</span><br>
 ├── <b>cau_hinh.py</b> <span class="cmt">← MỌI tham số ở đây, sửa gì thì sửa file này</span><br>
 ├── <b>nen_mat_ma.py</b> <span class="cmt">← mật mã dùng chung (Pedersen + Schnorr)</span><br>
+├── <span class="f-shared">chuan_bi_du_lieu.py</span> <span class="cmt">← TRIỂN KHAI THẬT: tách dữ liệu ra file .npz riêng từng máy</span><br>
+├── <span class="f-shared">server_http.py</span> <span class="cmt">← TRIỂN KHAI THẬT: server chạy qua Flask (HTTP)</span><br>
+├── <span class="f-shared">client_http.py</span> <span class="cmt">← TRIỂN KHAI THẬT: client chạy qua HTTP trên máy riêng</span><br>
+├── <span class="f-shared">giao_tiep.py</span> <span class="cmt">← chuyển gói dữ liệu (điểm EC, số lớn, mảng) sang JSON và ngược lại</span><br>
+├── <span class="f-shared">xem_du_lieu_server.py</span> <span class="cmt">← in chi tiết dữ liệu server nhận (debug/demo)</span><br>
 ├── <span class="f-data">dataset/</span> <span class="cmt">← DỮ LIỆU (đáy Hình 3)</span><br>
 │   ├── du_lieu.py <span class="cmt">nạp + chia dữ liệu IID/non-IID</span><br>
 │   └── README.md<br>
@@ -97,12 +113,12 @@ flsmpcpp_hinh3/<br>
 │   ├── client.py <span class="cmt">lớp Client: ghép 6 bước</span><br>
 │   └── README.md<br>
 └── <span class="f-server">server/</span> <span class="cmt">← PHÍA SERVER (nửa dưới Hình 3)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── server.py <span class="cmt">lọc client + tổng hợp + cập nhật</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── server.py <span class="cmt">lớp Server: 3 cửa lọc + tổng hợp + cập nhật</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;└── README.md
 </div>
 
 <h2>2. Luồng hoạt động (Hình 3)</h2>
-<p>Mỗi vòng huấn luyện, dữ liệu chạy từ client sang server theo luồng sau:</p>
+<p>Mỗi vòng huấn luyện, dữ liệu chạy từ client sang server theo luồng sau — đúng cho <b>cả 2 cách chạy</b> (mô phỏng hay HTTP thật), chỉ khác cách gói dữ liệu di chuyển (gọi hàm trực tiếp trong RAM, hay gửi qua mạng):</p>
 
 <div class="flow">
   <div class="flow-col flow-client">
@@ -141,7 +157,12 @@ flsmpcpp_hinh3/<br>
 <tr><td><code>server/server.py</code></td><td><span class="tag tag-server">server</span></td><td>Lớp <code>Server</code> — 3 cửa lọc + tổng hợp + cập nhật mô hình</td></tr>
 <tr><td><code>nen_mat_ma.py</code></td><td>chung</td><td>Pedersen commitment + Schnorr ZKP trên secp256k1</td></tr>
 <tr><td><code>cau_hinh.py</code></td><td>chung</td><td>Tất cả tham số (số client, ngưỡng, kiểu tấn công...)</td></tr>
-<tr><td><code>chay.py</code></td><td>chung</td><td>Ghép mọi thứ lại và chạy vòng lặp</td></tr>
+<tr><td><code>chay.py</code></td><td>chung</td><td>MÔ PHỎNG: ghép mọi thứ lại, chạy trong 1 tiến trình duy nhất</td></tr>
+<tr><td><code>chuan_bi_du_lieu.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Chạy 1 lần: tách dữ liệu thành file <code>.npz</code> riêng cho server + từng client</td></tr>
+<tr><td><code>server_http.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Server thật (Flask) — chạy trên máy server, expose API cho client kết nối</td></tr>
+<tr><td><code>client_http.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Client thật — chạy trên từng máy/máy ảo riêng, nói chuyện với server qua HTTP</td></tr>
+<tr><td><code>giao_tiep.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Chuyển gói (điểm EC, số nguyên lớn, mảng numpy) ↔ JSON để gửi qua mạng</td></tr>
+<tr><td><code>xem_du_lieu_server.py</code></td><td><span class="tag tag-shared">debug</span></td><td>Chạy mô phỏng + in chi tiết dữ liệu server nhận mỗi vòng (điểm, commitment, ai bị loại...)</td></tr>
 </table>
 
 <h2>4. Cách chỉnh sửa thường gặp</h2>
@@ -182,7 +203,7 @@ NON_IID = False           # đổi sang chia đều (IID)</code></pre>
 <h2>6. Bản đồ tới bài báo</h2>
 <table>
 <tr><th>Trong bài báo</th><th>Trong code này</th></tr>
-<tr><td>Section 4.1 — Warm-up initialization</td><td><code>chay.py</code> phần warm-up + <code>dataset</code> tập warmup</td></tr>
+<tr><td>Section 4.1 — Warm-up initialization</td><td><code>chay.py</code> / <code>server_http.py</code> phần warm-up + <code>dataset</code> tập warmup</td></tr>
 <tr><td>Section 4.2.1 — Local training</td><td><code>client/mo_hinh.py</code></td></tr>
 <tr><td>Section 4.2.2 — Pedersen commitment + ZKP</td><td><code>client/client.py</code> + <code>nen_mat_ma.py</code></td></tr>
 <tr><td>Section 4.3 — Dynamic client filtering</td><td><code>server/server.py</code> (3 cửa lọc)</td></tr>
@@ -190,8 +211,56 @@ NON_IID = False           # đổi sang chia đều (IID)</code></pre>
 <tr><td>Section 4.4.2 — Dropout-resilient aggregation</td><td><code>server/server.py</code> (kiểm quorum)</td></tr>
 </table>
 
+<h2>7. Triển khai thật trên nhiều máy (HTTP)</h2>
+<p><code>chay.py</code> chỉ mô phỏng trong 1 tiến trình — mọi "client" thật ra là object Python chạy tuần tự, không có mạng thật. Để chạy trên các máy/máy ảo riêng biệt (ví dụ 5 máy ảo đóng vai client, 1 máy thật làm server), dùng bộ 4 file: <code>chuan_bi_du_lieu.py</code>, <code>server_http.py</code>, <code>client_http.py</code>, <code>giao_tiep.py</code>.</p>
+
+<h3>Nguyên tắc quan trọng: dữ liệu không rời khỏi máy sở hữu nó</h3>
+<p>Khác với bản mô phỏng (server giữ sẵn dữ liệu của mọi client trong RAM), bản HTTP tách bạch rõ:</p>
+<ul>
+  <li><b>Server</b> chỉ giữ tập <b>warm-up + test</b> (dùng nội bộ) và tập <b>validation chung</b> (công khai, ai cũng thấy giống nhau).</li>
+  <li><b>Mỗi client</b> giữ <b>dữ liệu riêng của mình</b> trong 1 file <code>.npz</code> ngay trên máy đó — không có API nào để tải dữ liệu riêng của client qua mạng.</li>
+</ul>
+
+<h3>Các bước triển khai</h3>
+<ol class="steps">
+  <li><b>Chuẩn bị dữ liệu (chạy 1 lần, ở đâu cũng được):</b>
+    <pre><code>python chuan_bi_du_lieu.py</code></pre>
+    Sinh ra: <code>du_lieu_server.npz</code>, <code>du_lieu_validation.npz</code> (giữ ở máy server) và <code>du_lieu_client_0.npz</code> … <code>du_lieu_client_{N-1}.npz</code> (mỗi file copy sang đúng 1 máy client, rồi xoá khỏi máy chuẩn bị).
+  </li>
+  <li><b>Đổi <code>SO_CLIENT</code> trong <code>cau_hinh.py</code></b> cho khớp số máy ảo thật (ví dụ 5), rồi chạy lại bước 1.</li>
+  <li><b>Trên máy SERVER:</b>
+    <pre><code>pip install flask numpy scikit-learn
+python server_http.py</code></pre>
+    Server lắng nghe cổng <kbd>5000</kbd>, in ra địa chỉ IP cần dùng.
+  </li>
+  <li><b>Copy sang mỗi máy ẢO client:</b> thư mục <code>client/</code>, file <code>nen_mat_ma.py</code>, <code>giao_tiep.py</code>, <code>client_http.py</code>, và ĐÚNG 1 file <code>du_lieu_client_&lt;id&gt;.npz</code> của máy đó.</li>
+  <li><b>Trên mỗi máy ẢO client:</b>
+    <pre><code>pip install requests numpy
+python client_http.py &lt;id&gt; http://&lt;IP-máy-server&gt;:5000</code></pre>
+    Ví dụ máy ảo số 3: <code>python client_http.py 3 http://192.168.1.10:5000</code>
+  </li>
+</ol>
+
+<h3>Luồng hoạt động qua mạng</h3>
+<table>
+<tr><th>Bước</th><th>Ai gọi</th><th>Endpoint</th><th>Ý nghĩa</th></tr>
+<tr><td>1</td><td>Client (lúc khởi động)</td><td><code>GET /cau-hinh</code></td><td>lấy tham số huấn luyện + biết mình có phải client độc hại không</td></tr>
+<tr><td>2</td><td>Client (lúc khởi động)</td><td><code>GET /du-lieu-validation</code></td><td>lấy tập validation chung (công khai)</td></tr>
+<tr><td>3</td><td>Client (mỗi vòng)</td><td><code>GET /mo-hinh</code></td><td>lấy mô hình toàn cục hiện tại + số vòng</td></tr>
+<tr><td>4</td><td>Client (mỗi vòng)</td><td><code>POST /goi</code></td><td>gửi gói <code>(S, C, proof, Δw̃)</code> — request này CHỜ tới khi đủ client hoặc hết giờ, rồi nhận về mô hình mới</td></tr>
+</table>
+<p>Server dùng <code>threading.Condition</code> để đồng bộ: khi đủ <code>SO_CLIENT</code> gói (hoặc hết <code>TIMEOUT_VONG</code> giây), server tự lọc 3 cửa + tổng hợp SMPC + cập nhật mô hình, rồi trả kết quả cho MỌI client đang chờ cùng lúc.</p>
+
+<div class="note">
+<b>Đã kiểm thử:</b> chạy 10 tiến trình <code>client_http.py</code> thật (qua HTTP, đọc dữ liệu từ file <code>.npz</code> cục bộ) chống lại 1 <code>server_http.py</code> thật trên localhost — kết quả accuracy từng vòng khớp với bản mô phỏng <code>chay.py</code> (~87-89% sau 15 vòng).
+</div>
+
+<div class="warn">
+<b>Về bảo mật mạng:</b> <code>server_http.py</code> dùng HTTP thường (không TLS) — phù hợp cho demo/lab trong mạng nội bộ tin cậy (VD các máy ảo cùng 1 mạng riêng). Nếu triển khai qua mạng không tin cậy, cần thêm HTTPS và giới hạn firewall chỉ cho phép IP client đã biết kết nối tới cổng server.
+</div>
+
 <p style="margin-top:40px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--line); padding-top:16px;">
-Bản tái dựng dùng mô hình softmax thay CNN và bộ dữ liệu digits thay MNIST/CIFAR để chạy nhanh không cần GPU. Mọi cơ chế bảo mật (Pedersen, ZKP, SMPC, lọc) đều chạy thật. Con số tuyệt đối khác bài báo; xu hướng so sánh thì giữ nguyên.
+Bản tái dựng dùng mô hình softmax thay CNN và bộ dữ liệu digits thay MNIST/CIFAR để chạy nhanh không cần GPU. Mọi cơ chế bảo mật (Pedersen, ZKP, SMPC, lọc) đều chạy thật. Con số tuyệt đối khác bài báo; xu hướng so sánh thì giữ nguyên. Xem <code>sodo.html</code> để có sơ đồ trực quan cả 2 cách triển khai.
 </p>
 
 </body>

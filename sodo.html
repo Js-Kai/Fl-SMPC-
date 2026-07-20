@@ -16,15 +16,21 @@
   body {
     font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: var(--bg); color: var(--ink0); line-height: 1.7;
-    max-width: 960px; margin: 0 auto; padding: 40px 24px 80px;
+    max-width: 980px; margin: 0 auto; padding: 40px 24px 80px;
   }
   h1 { font-size: 30px; font-weight: 600; margin: 0 0 6px; }
   h2 { font-size: 22px; font-weight: 600; margin: 48px 0 16px; color: var(--accent);
        border-bottom: 2px solid var(--accent-bg); padding-bottom: 8px; }
+  h3 { font-size: 16px; font-weight: 600; margin: 22px 0 10px; }
   .sub { color: var(--muted); font-size: 15px; margin-bottom: 30px; }
   p { margin: 10px 0; }
   code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
          font-family: "SF Mono", Consolas, monospace; font-size: 13.5px; }
+
+  .mode-badge { display:inline-block; padding: 3px 14px; border-radius: 20px;
+        font-size: 13px; font-weight: 700; margin: 0 0 8px; }
+  .mode-sim { background: var(--data-bg); color: var(--data); }
+  .mode-http { background: var(--shared-bg); color: var(--shared); }
 
   .tag { display: inline-block; padding: 2px 10px; border-radius: 20px;
          font-size: 12px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
@@ -33,14 +39,12 @@
   .tag-data { background: var(--data-bg); color: var(--data); }
   .tag-shared { background: var(--shared-bg); color: var(--shared); }
 
-  /* ---------- legend ---------- */
   .legend { display:flex; gap:18px; flex-wrap:wrap; margin: 6px 0 10px; font-size: 13.5px; }
   .legend span { display:flex; align-items:center; gap:6px; }
   .dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
   .dot-client{ background:var(--client);} .dot-server{background:var(--server);}
   .dot-data{background:var(--data);} .dot-shared{background:var(--shared);}
 
-  /* ---------- flow diagram (vertical) ---------- */
   .flowchart { display:flex; flex-direction:column; align-items:stretch; margin: 20px 0; }
   .fbox {
     border-radius: 12px; padding: 14px 20px; border: 1.5px solid var(--line);
@@ -54,14 +58,12 @@
   .fbox.client { background: var(--client-bg); border-color: #c6dcf2; }
   .fbox.server { background: var(--server-bg); border-color: #f0cfc0; }
   .fbox.loop-outer { background: #fff; border: 2px dashed #c8c6ba; padding: 22px 22px 14px; }
+  .fbox.machine { border: 2px solid #8a8776; }
 
   .arrow-down { display:flex; justify-content:center; align-items:center; height: 30px; }
   .arrow-down::after {
     content: ""; width: 0; height: 0; border-left: 7px solid transparent;
     border-right: 7px solid transparent; border-top: 10px solid var(--arrow);
-  }
-  .arrow-down.line::before {
-    content:""; position:absolute;
   }
   .arrow-line { width: 2px; background: var(--arrow); height: 20px; margin: 0 auto; }
 
@@ -91,11 +93,24 @@
     font-style: italic;
   }
 
+  .machine-label {
+    display:inline-block; background:#3a3936; color:#fff;
+    font-size:11.5px; font-weight:700; padding: 2px 12px; border-radius: 20px;
+    position:absolute; top:-13px; left:22px; letter-spacing: .3px;
+  }
+
   .side-by-side { display:flex; gap:16px; }
   .side-by-side .fbox { flex:1; }
+  .side-by-side.uneven .fbox:first-child { flex: 1.4; }
+
+  .net-arrow { display:flex; align-items:center; justify-content:center; gap:10px;
+        margin: 6px 0; color: var(--muted); font-size: 12.5px; }
+  .net-arrow .line { flex:1; height:2px; background: repeating-linear-gradient(90deg, var(--arrow) 0 6px, transparent 6px 10px); }
 
   .note { background: #fff8e6; border-left: 4px solid #ba7517; padding: 12px 16px;
           border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14.5px; }
+  .warn { background: #faece7; border-left: 4px solid #993c1d; padding: 12px 16px;
+          border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14.5px; }
 
   table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
   th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
@@ -105,16 +120,19 @@
 <body>
 
 <h1>Sơ đồ triển khai — FL-SMPC++</h1>
-<p class="sub">Thứ tự thực thi thật của các file khi chạy <code>python chay.py</code> — file nào gọi file nào, theo đúng trình tự thời gian.</p>
+<p class="sub">Có <b>2 cách triển khai</b>: mô phỏng nhanh trong 1 tiến trình (<code>chay.py</code>), hoặc chạy thật qua HTTP trên nhiều máy/máy ảo riêng biệt. Sơ đồ dưới đây thể hiện thứ tự thực thi file cho cả 2 cách.</p>
 
 <div class="legend">
-  <span><i class="dot dot-shared"></i> Dùng chung (gốc)</span>
+  <span><i class="dot dot-shared"></i> Dùng chung / hạ tầng triển khai</span>
   <span><i class="dot dot-data"></i> dataset/</span>
   <span><i class="dot dot-client"></i> client/</span>
   <span><i class="dot dot-server"></i> server/</span>
 </div>
 
-<h2>1. Sơ đồ tổng quan — ai gọi ai</h2>
+<span class="mode-badge mode-sim">CÁCH 1</span>
+<h2 style="margin-top:6px;">1. Mô phỏng 1 máy — python chay.py</h2>
+<p>Toàn bộ chạy trong <b>1 tiến trình duy nhất</b>: mỗi "client" chỉ là 1 object Python, không có mạng thật. Dùng để hiểu nhanh logic hệ thống.</p>
+
 <div class="flowchart">
 
   <div class="fbox shared" style="position:relative;">
@@ -141,7 +159,7 @@
   <div class="fbox data" style="position:relative;">
     <span class="step-num d">1</span>
     <b class="title">dataset/du_lieu.py</b> <span class="tag tag-data">dataset</span>
-    <div class="file">nap_va_chia_du_lieu() → clients[], validation, warmup, test</div>
+    <div class="file">nap_va_chia_du_lieu() → clients[], validation, warmup, test — TẤT CẢ giữ trong RAM của server</div>
   </div>
   <div class="arrow-line"></div><div class="arrow-down"></div>
 
@@ -149,7 +167,7 @@
     <div class="fbox client" style="position:relative;">
       <span class="step-num c">2</span>
       <b class="title">client/client.py</b> <span class="tag tag-client">Client</span>
-      <div class="file">tạo 1 đối tượng Client cho mỗi client_id</div>
+      <div class="file">tạo 1 object Client cho mỗi client_id (cùng 1 tiến trình)</div>
       <ul class="substeps">
         <li>dùng <code>client/mo_hinh.py</code> để huấn luyện</li>
         <li>dùng <code>client/smpc.py</code> để che dữ liệu</li>
@@ -159,7 +177,7 @@
     <div class="fbox server" style="position:relative;">
       <span class="step-num s">3</span>
       <b class="title">server/server.py</b> <span class="tag tag-server">Server</span>
-      <div class="file">tạo 1 đối tượng Server, nhận mô hình khởi tạo (warm-up)</div>
+      <div class="file">tạo 1 object Server, nhận mô hình khởi tạo (warm-up)</div>
       <ul class="substeps">
         <li>dùng <code>nen_mat_ma.py</code> để xác minh ZKP</li>
       </ul>
@@ -168,20 +186,15 @@
   <div class="arrow-line"></div><div class="arrow-down"></div>
 
   <div class="fbox loop-outer" style="position:relative;">
-    <span class="loop-label">LẶP LẠI mỗi vòng — for vong in 1..SO_VONG</span>
+    <span class="loop-label">LẶP LẠI mỗi vòng — for vong in 1..SO_VONG (gọi hàm trực tiếp, không qua mạng)</span>
 
     <div class="fbox client" style="position:relative; margin-bottom:0;">
       <span class="step-num c">4</span>
       <b class="title">Client.chay_mot_vong()</b> <span class="tag tag-client">mỗi client</span>
       <ul class="substeps">
-        <li>Bước 1: <code>mo_hinh.py::huan_luyen_cuc_bo()</code> → Δw</li>
-        <li>Bước 2: nếu độc hại → bóp méo Δw (đảo nhãn)</li>
-        <li>Bước 3: <code>nen_mat_ma.py::Pedersen.commit()</code> → C</li>
-        <li>Bước 4: <code>mo_hinh.py::do_chinh_xac()</code> trên tập validation → S</li>
-        <li>Bước 5: <code>nen_mat_ma.py::SchnorrZKP.prove()</code> → proof</li>
-        <li>Bước 6: <code>smpc.py::tao_mat_na()</code> → Δw̃ (đã che)</li>
+        <li>Bước 1-6: huấn luyện → commitment → chấm điểm → ZKP → che SMPC</li>
       </ul>
-      <div class="loop-back">gửi gói (S, C, proof, Δw̃) lên server ↓</div>
+      <div class="loop-back">trả về gói (S, C, proof, Δw̃) — nằm luôn trong RAM ↓</div>
     </div>
 
     <div class="arrow-line"></div><div class="arrow-down"></div>
@@ -190,16 +203,9 @@
       <span class="step-num s">5</span>
       <b class="title">Server.tong_hop_mot_vong()</b> <span class="tag tag-server">1 lần / vòng</span>
       <ul class="substeps">
-        <li>Cửa 1: <code>SchnorrZKP.verify()</code> — proof có hợp lệ?</li>
-        <li>Cửa 2: đối chiếu vân tay (fingerprint) — bắt bất nhất</li>
-        <li>Cửa 3: lọc theo điểm validation S ≥ θ (NGUONG_VALIDATION)</li>
-        <li>Kiểm quorum — đủ client hợp lệ chưa?</li>
-        <li>Tổng hợp: cộng các Δw̃ đã che (nhiễu tự triệt tiêu)</li>
-        <li>Cập nhật mô hình toàn cục</li>
+        <li>Cửa 1 (ZKP) → Cửa 2 (vân tay) → Cửa 3 (validation) → quorum → tổng hợp → cập nhật mô hình</li>
       </ul>
     </div>
-
-    <div class="loop-back" style="margin-top:14px;">↩ mô hình mới được phát lại cho client ở vòng kế tiếp</div>
   </div>
 
   <div class="arrow-line"></div><div class="arrow-down"></div>
@@ -211,46 +217,93 @@
   </div>
 </div>
 
-<h2>2. Trình tự thực thi từng dòng lệnh (chay.py)</h2>
-<table>
-<tr><th>#</th><th>Trong chay.py</th><th>File thực sự chạy</th><th>Kết quả trả về</th></tr>
-<tr><td>1</td><td><code>from cau_hinh import CauHinh as cfg</code></td><td><code>cau_hinh.py</code></td><td>toàn bộ tham số hệ thống</td></tr>
-<tr><td>2</td><td><code>nap_va_chia_du_lieu(...)</code></td><td><code>dataset/du_lieu.py</code></td><td>clients[], validation, warmup, test</td></tr>
-<tr><td>3</td><td><code>Client(client_id=i, ...)</code> ×N</td><td><code>client/client.py</code></td><td>danh sách đối tượng Client</td></tr>
-<tr><td>4</td><td><code>huan_luyen_cuc_bo(...)</code> (warm-up)</td><td><code>client/mo_hinh.py</code></td><td>mô hình toàn cục khởi tạo</td></tr>
-<tr><td>5</td><td><code>Server(mo_hinh, ...)</code></td><td><code>server/server.py</code></td><td>đối tượng Server</td></tr>
-<tr><td>6</td><td><b>vòng lặp:</b> <code>c.chay_mot_vong(...)</code> ×N client</td><td><code>client.py</code> → <code>mo_hinh.py</code>, <code>smpc.py</code>, <code>nen_mat_ma.py</code></td><td>N gói (S, C, proof, Δw̃)</td></tr>
-<tr><td>7</td><td><code>server.tong_hop_mot_vong(cac_goi)</code></td><td><code>server.py</code> → <code>nen_mat_ma.py</code></td><td>mô hình toàn cục đã cập nhật</td></tr>
-<tr><td>8</td><td><code>do_chinh_xac(server.mo_hinh, ...)</code></td><td><code>client/mo_hinh.py</code></td><td>test accuracy để in ra màn hình</td></tr>
-<tr><td>9</td><td>lặp lại bước 6–8 cho đến hết <code>SO_VONG</code> vòng</td><td>—</td><td>in kết quả cuối cùng</td></tr>
-</table>
+<span class="mode-badge mode-http">CÁCH 2</span>
+<h2 style="margin-top:6px;">2. Triển khai thật qua HTTP — nhiều máy riêng biệt</h2>
+<p>Dùng khi có nhiều máy/máy ảo đóng vai client thật (ví dụ 5 máy) kết nối tới 1 máy server thật qua mạng. Dữ liệu riêng của mỗi client <b>không rời khỏi máy đó</b> — chỉ mô hình + gói (S, C, proof, Δw̃) đi qua mạng.</p>
 
-<h2>3. Phụ thuộc import giữa các file</h2>
+<h3>2.1. Chuẩn bị dữ liệu (chạy 1 lần)</h3>
 <div class="flowchart">
-  <div class="fbox shared"><b class="title">chay.py</b>
-    <div class="file">import cau_hinh, dataset, client, client.mo_hinh, server</div>
-  </div>
-  <div class="arrow-line"></div><div class="arrow-down"></div>
-  <div class="side-by-side">
-    <div class="fbox client"><b class="title">client/client.py</b>
-      <div class="file">import nen_mat_ma, client.mo_hinh, client.smpc</div>
-    </div>
-    <div class="fbox server"><b class="title">server/server.py</b>
-      <div class="file">import nen_mat_ma</div>
-    </div>
-  </div>
-  <div class="arrow-line"></div><div class="arrow-down"></div>
-  <div class="fbox shared"><b class="title">nen_mat_ma.py</b>
-    <div class="file">chỉ dùng hashlib, secrets — không phụ thuộc file nào khác trong dự án</div>
+  <div class="fbox shared" style="position:relative;">
+    <span class="step-num sh">A</span>
+    <b class="title">chuan_bi_du_lieu.py</b> <span class="tag tag-shared">1 lần duy nhất</span>
+    <div class="file">gọi <code>dataset/du_lieu.py::nap_va_chia_du_lieu()</code> rồi tách ra thành file .npz</div>
+    <ul class="substeps">
+      <li><code>du_lieu_server.npz</code> (warm-up + test) → giữ ở máy SERVER</li>
+      <li><code>du_lieu_validation.npz</code> (validation chung) → giữ ở máy SERVER</li>
+      <li><code>du_lieu_client_0.npz</code> … <code>du_lieu_client_N.npz</code> → mỗi file COPY tay sang đúng 1 máy client, rồi XOÁ khỏi nơi khác</li>
+    </ul>
   </div>
 </div>
 
+<h3>2.2. Sơ đồ 2 máy — server thật ↔ máy ảo client</h3>
+<div class="flowchart">
+  <div class="side-by-side uneven">
+    <div class="fbox server machine" style="position:relative;">
+      <span class="machine-label">MÁY SERVER THẬT</span>
+      <b class="title" style="margin-top:6px; display:block;">server_http.py</b>
+      <div class="file">nạp du_lieu_server.npz + du_lieu_validation.npz — KHÔNG có dữ liệu riêng của client nào</div>
+      <ul class="substeps">
+        <li>tạo <code>Server</code> (dùng <code>server/server.py</code>) + warm-up</li>
+        <li><code>GET /cau-hinh</code> — tham số + ai là client độc hại</li>
+        <li><code>GET /du-lieu-validation</code> — tập chung công khai</li>
+        <li><code>GET /mo-hinh</code> — mô hình toàn cục + số vòng hiện tại</li>
+        <li><code>POST /goi</code> — nhận gói, CHỜ đủ client hoặc hết giờ → lọc 3 cửa → tổng hợp SMPC → cập nhật mô hình → trả kết quả cho mọi client đang chờ</li>
+      </ul>
+    </div>
+    <div class="fbox client machine" style="position:relative;">
+      <span class="machine-label">MÁY ẢO CLIENT #i</span>
+      <b class="title" style="margin-top:6px; display:block;">client_http.py &lt;i&gt;</b>
+      <div class="file">chỉ có: client/, nen_mat_ma.py, giao_tiep.py, du_lieu_client_i.npz</div>
+      <ul class="substeps">
+        <li>đọc dữ liệu riêng từ <code>du_lieu_client_i.npz</code> (file cục bộ, KHÔNG qua mạng)</li>
+        <li>tạo <code>Client</code> (dùng <code>client/client.py</code>)</li>
+        <li>vòng lặp: <code>chay_mot_vong()</code> → <code>POST /goi</code> → nhận mô hình mới</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="net-arrow"><span class="line"></span> HTTP (JSON qua giao_tiep.py) <span class="line"></span></div>
+
+  <div class="note" style="margin-top:4px;">
+    <code>giao_tiep.py</code> chuyển đổi 2 chiều: điểm đường cong EC (tuple số nguyên lớn) ↔ string, mảng numpy (Δw̃, mô hình) ↔ list JSON — để gói dữ liệu mật mã có thể đi qua mạng HTTP bình thường.
+  </div>
+</div>
+
+<h3>2.3. Trình tự lệnh chạy</h3>
+<table>
+<tr><th>#</th><th>Chạy ở đâu</th><th>Lệnh</th><th>Kết quả</th></tr>
+<tr><td>1</td><td>máy chuẩn bị dữ liệu</td><td><code>python chuan_bi_du_lieu.py</code></td><td>sinh các file .npz</td></tr>
+<tr><td>2</td><td>máy server</td><td><code>python server_http.py</code></td><td>server lắng nghe cổng 5000</td></tr>
+<tr><td>3</td><td>mỗi máy ảo client #i</td><td><code>python client_http.py &lt;i&gt; http://IP-server:5000</code></td><td>client tự huấn luyện + gửi gói mỗi vòng</td></tr>
+<tr><td>4</td><td>—</td><td>lặp lại bước 3 tới khi <code>SO_VONG</code> vòng hoàn tất</td><td>mọi client nhận thông báo <code>ket_thuc = true</code></td></tr>
+</table>
+
+<div class="warn">
+<b>Khác biệt cốt lõi so với Cách 1:</b> ở Cách 1, server giữ TOÀN BỘ dữ liệu (kể cả của client) trong cùng 1 tiến trình — chỉ để mô phỏng nhanh. Ở Cách 2, đây là điều KHÔNG được phép: server chỉ có <code>du_lieu_server.npz</code> + <code>du_lieu_validation.npz</code>; dữ liệu riêng của từng client chỉ tồn tại trên đúng máy của nó, không có API nào phát tán dữ liệu đó ra ngoài.
+</div>
+
+<h2>3. Bảng file → vai trò → chạy ở đâu</h2>
+<table>
+<tr><th>File</th><th>Thuộc</th><th>Dùng trong</th><th>Chạy ở đâu</th></tr>
+<tr><td><code>chay.py</code></td><td>chung</td><td>Cách 1</td><td>1 máy bất kỳ (mô phỏng)</td></tr>
+<tr><td><code>cau_hinh.py</code></td><td>chung</td><td>cả 2</td><td>mọi máy (chỉ đọc tham số)</td></tr>
+<tr><td><code>nen_mat_ma.py</code></td><td>chung</td><td>cả 2</td><td>server + mọi client</td></tr>
+<tr><td><code>dataset/du_lieu.py</code></td><td class="tag tag-data">dataset</td><td>Cách 1 trực tiếp; Cách 2 qua chuan_bi_du_lieu.py</td><td>Cách 1: máy mô phỏng · Cách 2: chỉ máy chuẩn bị dữ liệu</td></tr>
+<tr><td><code>client/*.py</code></td><td class="tag tag-client">client</td><td>cả 2</td><td>Cách 1: máy mô phỏng · Cách 2: mọi máy ảo client</td></tr>
+<tr><td><code>server/server.py</code></td><td class="tag tag-server">server</td><td>cả 2</td><td>Cách 1: máy mô phỏng · Cách 2: chỉ máy server</td></tr>
+<tr><td><code>chuan_bi_du_lieu.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>chạy 1 lần, ở đâu cũng được</td></tr>
+<tr><td><code>server_http.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>CHỈ máy server</td></tr>
+<tr><td><code>client_http.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>CHỈ máy ảo client (1 file/1 máy)</td></tr>
+<tr><td><code>giao_tiep.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>server + mọi client</td></tr>
+<tr><td><code>xem_du_lieu_server.py</code></td><td class="tag tag-shared">debug</td><td>Cách 1</td><td>máy mô phỏng (chỉ để xem dữ liệu chi tiết)</td></tr>
+</table>
+
 <div class="note">
-<b>Cách đọc sơ đồ:</b> khối màu vàng nâu (dùng chung) luôn chạy trước và không phụ thuộc thư mục nào. Khối màu xám (dataset) chạy một lần duy nhất lúc khởi động. Khối xanh (client) và khối cam (server) nằm trong <b>vòng lặp có khung nét đứt</b> — chạy đi chạy lại <code>SO_VONG</code> lần, mỗi lần client chạy trước rồi gửi gói lên cho server xử lý.
+<b>Cách đọc sơ đồ:</b> khối màu vàng nâu (dùng chung/hạ tầng triển khai) không phụ thuộc thư mục nào. Khối xám (dataset) chỉ chạy ở nơi có toàn quyền truy cập dữ liệu gốc. Khối xanh (client) và khối cam (server) ở Cách 1 nằm chung 1 vòng lặp trong RAM; ở Cách 2 chúng tách thành 2 tiến trình/máy riêng, nói chuyện qua HTTP với khung nét đứt ngăn cách bằng mạng thật.
 </div>
 
 <p style="margin-top:40px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--line); padding-top:16px;">
-Xem <code>HUONG_DAN.html</code> để biết giải thích chi tiết ý nghĩa từng bước và cách chỉnh sửa tham số.
+Xem <code>HUONG_DAN.html</code> để biết giải thích chi tiết ý nghĩa từng bước, cách chỉnh tham số, và hướng dẫn đầy đủ triển khai HTTP (mục 7).
 </p>
 
 </body>
