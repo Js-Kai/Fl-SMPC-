@@ -77,11 +77,11 @@
 <body>
 
 <h1>FL-SMPC++ — Tái dựng theo Hình 3</h1>
-<p class="sub">Hệ thống được chia thành 3 thư mục rõ ràng: <b>dataset</b>, <b>client</b>, <b>server</b> — để dễ hiểu và dễ chỉnh sửa. Có <b>2 cách chạy</b>: mô phỏng 1 máy (nhanh, để hiểu logic) hoặc triển khai thật qua HTTP trên nhiều máy.</p>
+<p class="sub">Hệ thống được chia thành 3 thư mục logic rõ ràng: <b>dataset</b>, <b>client</b>, <b>server</b> — để dễ hiểu và dễ chỉnh sửa. Cách CHẠY thì tách riêng ở 2 thư mục: <b>mo_phong/</b> (1 tiến trình, nhanh, để hiểu logic) và <b>trien_khai_http/</b> (chạy thật qua HTTP trên nhiều máy).</p>
 
 <div class="card">
 <p style="margin:16px 0;"><b>Cách 1 — Mô phỏng nhanh trên 1 máy:</b></p>
-<pre><code>python chay.py</code></pre>
+<pre><code>python mo_phong/chay.py</code></pre>
 <p style="margin:16px 0;">Cần <code>numpy</code> và <code>scikit-learn</code>. Chạy khoảng vài giây, in ra từng vòng huấn luyện. Đây là cách nhanh nhất để xem toàn bộ cơ chế hoạt động — mọi "client" chỉ là object Python chạy tuần tự trong cùng 1 tiến trình.</p>
 </div>
 
@@ -96,14 +96,9 @@
 flsmpcpp_hinh3/<br>
 ├── <b>HUONG_DAN.html</b> <span class="cmt">← file bạn đang đọc</span><br>
 ├── <b>sodo.html</b> <span class="cmt">← sơ đồ trực quan các bước triển khai</span><br>
-├── <b>chay.py</b> <span class="cmt">← MÔ PHỎNG: chạy 1 máy, mọi client chạy tuần tự</span><br>
 ├── <b>cau_hinh.py</b> <span class="cmt">← MỌI tham số ở đây, sửa gì thì sửa file này</span><br>
 ├── <b>nen_mat_ma.py</b> <span class="cmt">← mật mã dùng chung (Pedersen + Schnorr)</span><br>
-├── <span class="f-shared">chuan_bi_du_lieu.py</span> <span class="cmt">← TRIỂN KHAI THẬT: tách dữ liệu ra file .npz riêng từng máy</span><br>
-├── <span class="f-shared">server_http.py</span> <span class="cmt">← TRIỂN KHAI THẬT: server chạy qua Flask (HTTP)</span><br>
-├── <span class="f-shared">client_http.py</span> <span class="cmt">← TRIỂN KHAI THẬT: client chạy qua HTTP trên máy riêng</span><br>
-├── <span class="f-shared">giao_tiep.py</span> <span class="cmt">← chuyển gói dữ liệu (điểm EC, số lớn, mảng) sang JSON và ngược lại</span><br>
-├── <span class="f-shared">xem_du_lieu_server.py</span> <span class="cmt">← in chi tiết dữ liệu server nhận (debug/demo)</span><br>
+├── <b>.gitignore</b><br>
 ├── <span class="f-data">dataset/</span> <span class="cmt">← DỮ LIỆU (đáy Hình 3)</span><br>
 │   ├── du_lieu.py <span class="cmt">nạp + chia dữ liệu IID/non-IID</span><br>
 │   └── README.md<br>
@@ -112,9 +107,17 @@ flsmpcpp_hinh3/<br>
 │   ├── smpc.py <span class="cmt">che bản cập nhật bằng nhiễu</span><br>
 │   ├── client.py <span class="cmt">lớp Client: ghép 6 bước</span><br>
 │   └── README.md<br>
-└── <span class="f-server">server/</span> <span class="cmt">← PHÍA SERVER (nửa dưới Hình 3)</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;├── server.py <span class="cmt">lớp Server: 3 cửa lọc + tổng hợp + cập nhật</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;└── README.md
+├── <span class="f-server">server/</span> <span class="cmt">← PHÍA SERVER (nửa dưới Hình 3)</span><br>
+│   ├── server.py <span class="cmt">lớp Server: 3 cửa lọc + tổng hợp + cập nhật</span><br>
+│   └── README.md<br>
+├── <span class="f-data">mo_phong/</span> <span class="cmt">← CÁCH 1: mô phỏng 1 tiến trình</span><br>
+│   ├── chay.py <span class="cmt">chạy hệ thống, in tóm tắt mỗi vòng</span><br>
+│   └── xem_du_lieu_server.py <span class="cmt">chạy + in chi tiết dữ liệu server nhận (debug)</span><br>
+└── <span class="f-shared">trien_khai_http/</span> <span class="cmt">← CÁCH 2: triển khai thật qua HTTP, nhiều máy</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── chuan_bi_du_lieu.py <span class="cmt">chạy 1 lần: tách dữ liệu ra .npz riêng từng máy</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── server_http.py <span class="cmt">server thật, chạy qua Flask (HTTP)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── client_http.py <span class="cmt">client thật, chạy trên máy/máy ảo riêng</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── giao_tiep.py <span class="cmt">chuyển gói dữ liệu (điểm EC, số lớn, mảng) ↔ JSON</span>
 </div>
 
 <h2>2. Luồng hoạt động (Hình 3)</h2>
@@ -157,12 +160,12 @@ flsmpcpp_hinh3/<br>
 <tr><td><code>server/server.py</code></td><td><span class="tag tag-server">server</span></td><td>Lớp <code>Server</code> — 3 cửa lọc + tổng hợp + cập nhật mô hình</td></tr>
 <tr><td><code>nen_mat_ma.py</code></td><td>chung</td><td>Pedersen commitment + Schnorr ZKP trên secp256k1</td></tr>
 <tr><td><code>cau_hinh.py</code></td><td>chung</td><td>Tất cả tham số (số client, ngưỡng, kiểu tấn công...)</td></tr>
-<tr><td><code>chay.py</code></td><td>chung</td><td>MÔ PHỎNG: ghép mọi thứ lại, chạy trong 1 tiến trình duy nhất</td></tr>
-<tr><td><code>chuan_bi_du_lieu.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Chạy 1 lần: tách dữ liệu thành file <code>.npz</code> riêng cho server + từng client</td></tr>
-<tr><td><code>server_http.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Server thật (Flask) — chạy trên máy server, expose API cho client kết nối</td></tr>
-<tr><td><code>client_http.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Client thật — chạy trên từng máy/máy ảo riêng, nói chuyện với server qua HTTP</td></tr>
-<tr><td><code>giao_tiep.py</code></td><td><span class="tag tag-shared">triển khai</span></td><td>Chuyển gói (điểm EC, số nguyên lớn, mảng numpy) ↔ JSON để gửi qua mạng</td></tr>
-<tr><td><code>xem_du_lieu_server.py</code></td><td><span class="tag tag-shared">debug</span></td><td>Chạy mô phỏng + in chi tiết dữ liệu server nhận mỗi vòng (điểm, commitment, ai bị loại...)</td></tr>
+<tr><td><code>mo_phong/chay.py</code></td><td>Cách 1</td><td>MÔ PHỎNG: ghép mọi thứ lại, chạy trong 1 tiến trình duy nhất</td></tr>
+<tr><td><code>mo_phong/xem_du_lieu_server.py</code></td><td>Cách 1</td><td>Chạy mô phỏng + in chi tiết dữ liệu server nhận mỗi vòng (điểm, commitment, ai bị loại...)</td></tr>
+<tr><td><code>trien_khai_http/chuan_bi_du_lieu.py</code></td><td><span class="tag tag-shared">Cách 2</span></td><td>Chạy 1 lần: tách dữ liệu thành file <code>.npz</code> riêng cho server + từng client</td></tr>
+<tr><td><code>trien_khai_http/server_http.py</code></td><td><span class="tag tag-shared">Cách 2</span></td><td>Server thật (Flask) — chạy trên máy server, expose API cho client kết nối</td></tr>
+<tr><td><code>trien_khai_http/client_http.py</code></td><td><span class="tag tag-shared">Cách 2</span></td><td>Client thật — chạy trên từng máy/máy ảo riêng, nói chuyện với server qua HTTP</td></tr>
+<tr><td><code>trien_khai_http/giao_tiep.py</code></td><td><span class="tag tag-shared">Cách 2</span></td><td>Chuyển gói (điểm EC, số nguyên lớn, mảng numpy) ↔ JSON để gửi qua mạng</td></tr>
 </table>
 
 <h2>4. Cách chỉnh sửa thường gặp</h2>
@@ -203,7 +206,7 @@ NON_IID = False           # đổi sang chia đều (IID)</code></pre>
 <h2>6. Bản đồ tới bài báo</h2>
 <table>
 <tr><th>Trong bài báo</th><th>Trong code này</th></tr>
-<tr><td>Section 4.1 — Warm-up initialization</td><td><code>chay.py</code> / <code>server_http.py</code> phần warm-up + <code>dataset</code> tập warmup</td></tr>
+<tr><td>Section 4.1 — Warm-up initialization</td><td><code>mo_phong/chay.py</code> / <code>trien_khai_http/server_http.py</code> phần warm-up + <code>dataset</code> tập warmup</td></tr>
 <tr><td>Section 4.2.1 — Local training</td><td><code>client/mo_hinh.py</code></td></tr>
 <tr><td>Section 4.2.2 — Pedersen commitment + ZKP</td><td><code>client/client.py</code> + <code>nen_mat_ma.py</code></td></tr>
 <tr><td>Section 4.3 — Dynamic client filtering</td><td><code>server/server.py</code> (3 cửa lọc)</td></tr>
@@ -212,7 +215,7 @@ NON_IID = False           # đổi sang chia đều (IID)</code></pre>
 </table>
 
 <h2>7. Triển khai thật trên nhiều máy (HTTP)</h2>
-<p><code>chay.py</code> chỉ mô phỏng trong 1 tiến trình — mọi "client" thật ra là object Python chạy tuần tự, không có mạng thật. Để chạy trên các máy/máy ảo riêng biệt (ví dụ 5 máy ảo đóng vai client, 1 máy thật làm server), dùng bộ 4 file: <code>chuan_bi_du_lieu.py</code>, <code>server_http.py</code>, <code>client_http.py</code>, <code>giao_tiep.py</code>.</p>
+<p><code>mo_phong/chay.py</code> chỉ mô phỏng trong 1 tiến trình — mọi "client" thật ra là object Python chạy tuần tự, không có mạng thật. Để chạy trên các máy/máy ảo riêng biệt (ví dụ 5 máy ảo đóng vai client, 1 máy thật làm server), dùng thư mục <code>trien_khai_http/</code> (4 file: <code>chuan_bi_du_lieu.py</code>, <code>server_http.py</code>, <code>client_http.py</code>, <code>giao_tiep.py</code>).</p>
 
 <h3>Nguyên tắc quan trọng: dữ liệu không rời khỏi máy sở hữu nó</h3>
 <p>Khác với bản mô phỏng (server giữ sẵn dữ liệu của mọi client trong RAM), bản HTTP tách bạch rõ:</p>
@@ -223,21 +226,21 @@ NON_IID = False           # đổi sang chia đều (IID)</code></pre>
 
 <h3>Các bước triển khai</h3>
 <ol class="steps">
-  <li><b>Chuẩn bị dữ liệu (chạy 1 lần, ở đâu cũng được):</b>
-    <pre><code>python chuan_bi_du_lieu.py</code></pre>
-    Sinh ra: <code>du_lieu_server.npz</code>, <code>du_lieu_validation.npz</code> (giữ ở máy server) và <code>du_lieu_client_0.npz</code> … <code>du_lieu_client_{N-1}.npz</code> (mỗi file copy sang đúng 1 máy client, rồi xoá khỏi máy chuẩn bị).
+  <li><b>Chuẩn bị dữ liệu (chạy 1 lần, từ thư mục gốc dự án):</b>
+    <pre><code>python trien_khai_http/chuan_bi_du_lieu.py</code></pre>
+    Sinh ra ở thư mục gốc: <code>du_lieu_server.npz</code>, <code>du_lieu_validation.npz</code> (giữ ở máy server) và <code>du_lieu_client_0.npz</code> … <code>du_lieu_client_{N-1}.npz</code> (mỗi file copy sang đúng 1 máy client, rồi xoá khỏi máy chuẩn bị).
   </li>
   <li><b>Đổi <code>SO_CLIENT</code> trong <code>cau_hinh.py</code></b> cho khớp số máy ảo thật (ví dụ 5), rồi chạy lại bước 1.</li>
-  <li><b>Trên máy SERVER:</b>
+  <li><b>Trên máy SERVER (từ thư mục gốc dự án):</b>
     <pre><code>pip install flask numpy scikit-learn
-python server_http.py</code></pre>
+python trien_khai_http/server_http.py</code></pre>
     Server lắng nghe cổng <kbd>5000</kbd>, in ra địa chỉ IP cần dùng.
   </li>
-  <li><b>Copy sang mỗi máy ẢO client:</b> thư mục <code>client/</code>, file <code>nen_mat_ma.py</code>, <code>giao_tiep.py</code>, <code>client_http.py</code>, và ĐÚNG 1 file <code>du_lieu_client_&lt;id&gt;.npz</code> của máy đó.</li>
-  <li><b>Trên mỗi máy ẢO client:</b>
+  <li><b>Copy sang mỗi máy ẢO client</b> (giữ nguyên cấu trúc thư mục tương đối): thư mục <code>client/</code>, file <code>nen_mat_ma.py</code>, thư mục <code>trien_khai_http/</code> (chứa <code>client_http.py</code> + <code>giao_tiep.py</code>), và ĐÚNG 1 file <code>du_lieu_client_&lt;id&gt;.npz</code> của máy đó (đặt ở thư mục gốc, ngang hàng với <code>client/</code>).</li>
+  <li><b>Trên mỗi máy ẢO client (từ thư mục gốc đã copy sang):</b>
     <pre><code>pip install requests numpy
-python client_http.py &lt;id&gt; http://&lt;IP-máy-server&gt;:5000</code></pre>
-    Ví dụ máy ảo số 3: <code>python client_http.py 3 http://192.168.1.10:5000</code>
+python trien_khai_http/client_http.py &lt;id&gt; http://&lt;IP-máy-server&gt;:5000</code></pre>
+    Ví dụ máy ảo số 3: <code>python trien_khai_http/client_http.py 3 http://192.168.1.10:5000</code>
   </li>
 </ol>
 
@@ -252,7 +255,7 @@ python client_http.py &lt;id&gt; http://&lt;IP-máy-server&gt;:5000</code></pre>
 <p>Server dùng <code>threading.Condition</code> để đồng bộ: khi đủ <code>SO_CLIENT</code> gói (hoặc hết <code>TIMEOUT_VONG</code> giây), server tự lọc 3 cửa + tổng hợp SMPC + cập nhật mô hình, rồi trả kết quả cho MỌI client đang chờ cùng lúc.</p>
 
 <div class="note">
-<b>Đã kiểm thử:</b> chạy 10 tiến trình <code>client_http.py</code> thật (qua HTTP, đọc dữ liệu từ file <code>.npz</code> cục bộ) chống lại 1 <code>server_http.py</code> thật trên localhost — kết quả accuracy từng vòng khớp với bản mô phỏng <code>chay.py</code> (~87-89% sau 15 vòng).
+<b>Đã kiểm thử:</b> chạy 10 tiến trình <code>trien_khai_http/client_http.py</code> thật (qua HTTP, đọc dữ liệu từ file <code>.npz</code> cục bộ) chống lại 1 <code>trien_khai_http/server_http.py</code> thật trên localhost — kết quả accuracy từng vòng khớp với bản mô phỏng <code>mo_phong/chay.py</code> (~87-89% sau 15 vòng).
 </div>
 
 <div class="warn">

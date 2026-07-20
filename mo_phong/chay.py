@@ -1,7 +1,7 @@
 """
-chay.py — Bộ điều phối: ghép dataset + client + server thành vòng lặp Hình 3.
+mo_phong/chay.py — Bộ điều phối: ghép dataset + client + server thành vòng lặp Hình 3.
 
-Chạy:  python chay.py
+Chạy (từ thư mục gốc dự án):  python mo_phong/chay.py
 
 File này KHÔNG chứa logic của hệ thống. Nó chỉ:
   1. nạp dữ liệu   (gọi thư mục dataset/)
@@ -10,9 +10,15 @@ File này KHÔNG chứa logic của hệ thống. Nó chỉ:
   4. lặp qua từng vòng, in ra luồng để bạn thấy Hình 3 chạy
 
 Muốn đổi tham số -> sửa file cau_hinh.py, KHÔNG sửa file này.
+Đây là bản MÔ PHỎNG 1 tiến trình — muốn chạy thật trên nhiều máy, xem trien_khai_http/.
 """
 
+import os
+import sys
+
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cau_hinh import CauHinh as cfg
 from dataset import nap_va_chia_du_lieu

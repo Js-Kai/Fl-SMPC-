@@ -120,7 +120,7 @@
 <body>
 
 <h1>Sơ đồ triển khai — FL-SMPC++</h1>
-<p class="sub">Có <b>2 cách triển khai</b>: mô phỏng nhanh trong 1 tiến trình (<code>chay.py</code>), hoặc chạy thật qua HTTP trên nhiều máy/máy ảo riêng biệt. Sơ đồ dưới đây thể hiện thứ tự thực thi file cho cả 2 cách.</p>
+<p class="sub">Có <b>2 cách triển khai</b>, tách thành 2 thư mục riêng: <code>mo_phong/</code> (mô phỏng nhanh trong 1 tiến trình) và <code>trien_khai_http/</code> (chạy thật qua HTTP trên nhiều máy/máy ảo riêng biệt). Sơ đồ dưới đây thể hiện thứ tự thực thi file cho cả 2 cách.</p>
 
 <div class="legend">
   <span><i class="dot dot-shared"></i> Dùng chung / hạ tầng triển khai</span>
@@ -130,14 +130,14 @@
 </div>
 
 <span class="mode-badge mode-sim">CÁCH 1</span>
-<h2 style="margin-top:6px;">1. Mô phỏng 1 máy — python chay.py</h2>
+<h2 style="margin-top:6px;">1. Mô phỏng 1 máy — python mo_phong/chay.py</h2>
 <p>Toàn bộ chạy trong <b>1 tiến trình duy nhất</b>: mỗi "client" chỉ là 1 object Python, không có mạng thật. Dùng để hiểu nhanh logic hệ thống.</p>
 
 <div class="flowchart">
 
   <div class="fbox shared" style="position:relative;">
     <span class="step-num sh">0</span>
-    <b class="title">chay.py</b> <span class="tag tag-shared">điều phối</span>
+    <b class="title">mo_phong/chay.py</b> <span class="tag tag-shared">điều phối</span>
     <div class="file">bộ điều phối — không chứa logic, chỉ ghép mọi thứ lại</div>
   </div>
   <div class="arrow-line"></div><div class="arrow-down"></div>
@@ -212,7 +212,7 @@
 
   <div class="fbox shared" style="position:relative;">
     <span class="step-num sh">6</span>
-    <b class="title">chay.py</b> <span class="tag tag-shared">kết thúc</span>
+    <b class="title">mo_phong/chay.py</b> <span class="tag tag-shared">kết thúc</span>
     <div class="file">in test accuracy cuối cùng sau SO_VONG vòng</div>
   </div>
 </div>
@@ -225,8 +225,8 @@
 <div class="flowchart">
   <div class="fbox shared" style="position:relative;">
     <span class="step-num sh">A</span>
-    <b class="title">chuan_bi_du_lieu.py</b> <span class="tag tag-shared">1 lần duy nhất</span>
-    <div class="file">gọi <code>dataset/du_lieu.py::nap_va_chia_du_lieu()</code> rồi tách ra thành file .npz</div>
+    <b class="title">trien_khai_http/chuan_bi_du_lieu.py</b> <span class="tag tag-shared">1 lần duy nhất</span>
+    <div class="file">gọi <code>dataset/du_lieu.py::nap_va_chia_du_lieu()</code> rồi tách ra thành file .npz (ở thư mục gốc dự án)</div>
     <ul class="substeps">
       <li><code>du_lieu_server.npz</code> (warm-up + test) → giữ ở máy SERVER</li>
       <li><code>du_lieu_validation.npz</code> (validation chung) → giữ ở máy SERVER</li>
@@ -240,7 +240,7 @@
   <div class="side-by-side uneven">
     <div class="fbox server machine" style="position:relative;">
       <span class="machine-label">MÁY SERVER THẬT</span>
-      <b class="title" style="margin-top:6px; display:block;">server_http.py</b>
+      <b class="title" style="margin-top:6px; display:block;">trien_khai_http/server_http.py</b>
       <div class="file">nạp du_lieu_server.npz + du_lieu_validation.npz — KHÔNG có dữ liệu riêng của client nào</div>
       <ul class="substeps">
         <li>tạo <code>Server</code> (dùng <code>server/server.py</code>) + warm-up</li>
@@ -252,8 +252,8 @@
     </div>
     <div class="fbox client machine" style="position:relative;">
       <span class="machine-label">MÁY ẢO CLIENT #i</span>
-      <b class="title" style="margin-top:6px; display:block;">client_http.py &lt;i&gt;</b>
-      <div class="file">chỉ có: client/, nen_mat_ma.py, giao_tiep.py, du_lieu_client_i.npz</div>
+      <b class="title" style="margin-top:6px; display:block;">trien_khai_http/client_http.py &lt;i&gt;</b>
+      <div class="file">chỉ có: client/, nen_mat_ma.py, trien_khai_http/ (client_http.py + giao_tiep.py), du_lieu_client_i.npz</div>
       <ul class="substeps">
         <li>đọc dữ liệu riêng từ <code>du_lieu_client_i.npz</code> (file cục bộ, KHÔNG qua mạng)</li>
         <li>tạo <code>Client</code> (dùng <code>client/client.py</code>)</li>
@@ -272,9 +272,9 @@
 <h3>2.3. Trình tự lệnh chạy</h3>
 <table>
 <tr><th>#</th><th>Chạy ở đâu</th><th>Lệnh</th><th>Kết quả</th></tr>
-<tr><td>1</td><td>máy chuẩn bị dữ liệu</td><td><code>python chuan_bi_du_lieu.py</code></td><td>sinh các file .npz</td></tr>
-<tr><td>2</td><td>máy server</td><td><code>python server_http.py</code></td><td>server lắng nghe cổng 5000</td></tr>
-<tr><td>3</td><td>mỗi máy ảo client #i</td><td><code>python client_http.py &lt;i&gt; http://IP-server:5000</code></td><td>client tự huấn luyện + gửi gói mỗi vòng</td></tr>
+<tr><td>1</td><td>máy chuẩn bị dữ liệu</td><td><code>python trien_khai_http/chuan_bi_du_lieu.py</code></td><td>sinh các file .npz ở thư mục gốc</td></tr>
+<tr><td>2</td><td>máy server</td><td><code>python trien_khai_http/server_http.py</code></td><td>server lắng nghe cổng 5000</td></tr>
+<tr><td>3</td><td>mỗi máy ảo client #i</td><td><code>python trien_khai_http/client_http.py &lt;i&gt; http://IP-server:5000</code></td><td>client tự huấn luyện + gửi gói mỗi vòng</td></tr>
 <tr><td>4</td><td>—</td><td>lặp lại bước 3 tới khi <code>SO_VONG</code> vòng hoàn tất</td><td>mọi client nhận thông báo <code>ket_thuc = true</code></td></tr>
 </table>
 
@@ -285,17 +285,17 @@
 <h2>3. Bảng file → vai trò → chạy ở đâu</h2>
 <table>
 <tr><th>File</th><th>Thuộc</th><th>Dùng trong</th><th>Chạy ở đâu</th></tr>
-<tr><td><code>chay.py</code></td><td>chung</td><td>Cách 1</td><td>1 máy bất kỳ (mô phỏng)</td></tr>
+<tr><td><code>mo_phong/chay.py</code></td><td>Cách 1</td><td>Cách 1</td><td>1 máy bất kỳ (mô phỏng)</td></tr>
 <tr><td><code>cau_hinh.py</code></td><td>chung</td><td>cả 2</td><td>mọi máy (chỉ đọc tham số)</td></tr>
 <tr><td><code>nen_mat_ma.py</code></td><td>chung</td><td>cả 2</td><td>server + mọi client</td></tr>
-<tr><td><code>dataset/du_lieu.py</code></td><td class="tag tag-data">dataset</td><td>Cách 1 trực tiếp; Cách 2 qua chuan_bi_du_lieu.py</td><td>Cách 1: máy mô phỏng · Cách 2: chỉ máy chuẩn bị dữ liệu</td></tr>
+<tr><td><code>dataset/du_lieu.py</code></td><td class="tag tag-data">dataset</td><td>Cách 1 trực tiếp; Cách 2 qua trien_khai_http/chuan_bi_du_lieu.py</td><td>Cách 1: máy mô phỏng · Cách 2: chỉ máy chuẩn bị dữ liệu</td></tr>
 <tr><td><code>client/*.py</code></td><td class="tag tag-client">client</td><td>cả 2</td><td>Cách 1: máy mô phỏng · Cách 2: mọi máy ảo client</td></tr>
 <tr><td><code>server/server.py</code></td><td class="tag tag-server">server</td><td>cả 2</td><td>Cách 1: máy mô phỏng · Cách 2: chỉ máy server</td></tr>
-<tr><td><code>chuan_bi_du_lieu.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>chạy 1 lần, ở đâu cũng được</td></tr>
-<tr><td><code>server_http.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>CHỈ máy server</td></tr>
-<tr><td><code>client_http.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>CHỈ máy ảo client (1 file/1 máy)</td></tr>
-<tr><td><code>giao_tiep.py</code></td><td class="tag tag-shared">triển khai</td><td>Cách 2</td><td>server + mọi client</td></tr>
-<tr><td><code>xem_du_lieu_server.py</code></td><td class="tag tag-shared">debug</td><td>Cách 1</td><td>máy mô phỏng (chỉ để xem dữ liệu chi tiết)</td></tr>
+<tr><td><code>trien_khai_http/chuan_bi_du_lieu.py</code></td><td class="tag tag-shared">Cách 2</td><td>Cách 2</td><td>chạy 1 lần, ở đâu cũng được</td></tr>
+<tr><td><code>trien_khai_http/server_http.py</code></td><td class="tag tag-shared">Cách 2</td><td>Cách 2</td><td>CHỈ máy server</td></tr>
+<tr><td><code>trien_khai_http/client_http.py</code></td><td class="tag tag-shared">Cách 2</td><td>Cách 2</td><td>CHỈ máy ảo client (1 file/1 máy)</td></tr>
+<tr><td><code>trien_khai_http/giao_tiep.py</code></td><td class="tag tag-shared">Cách 2</td><td>Cách 2</td><td>server + mọi client</td></tr>
+<tr><td><code>mo_phong/xem_du_lieu_server.py</code></td><td>Cách 1</td><td>Cách 1</td><td>máy mô phỏng (chỉ để xem dữ liệu chi tiết)</td></tr>
 </table>
 
 <div class="note">

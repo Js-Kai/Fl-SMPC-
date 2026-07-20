@@ -1,8 +1,9 @@
 """
-server_http.py — Server THẬT chạy qua HTTP (Flask), để nhiều máy client thật kết nối vào.
+trien_khai_http/server_http.py — Server THẬT chạy qua HTTP (Flask), để nhiều máy
+client thật kết nối vào.
 
 Dùng khi có nhiều MÁY khác nhau (ví dụ 5 máy ảo đóng vai client, 1 máy thật
-làm server) thay vì chạy mô phỏng trong 1 process như chay.py.
+làm server) thay vì chạy mô phỏng trong 1 process như mo_phong/chay.py.
 
 Server KHÔNG còn giữ dữ liệu riêng của client — chỉ giữ tập warm-up/test
 (dùng nội bộ để khởi động + đánh giá mô hình) và tập validation CHUNG
@@ -12,9 +13,9 @@ trên máy client, đọc từ file .npz cục bộ (xem client_http.py).
 Cài đặt (chỉ trên máy server):
     pip install flask numpy scikit-learn
 
-Chạy (CẦN chạy chuan_bi_du_lieu.py một lần trước để tạo các file .npz):
-    python chuan_bi_du_lieu.py
-    python server_http.py
+Chạy (TỪ THƯ MỤC GỐC dự án — cần chuan_bi_du_lieu.py chạy trước để tạo .npz):
+    python trien_khai_http/chuan_bi_du_lieu.py
+    python trien_khai_http/server_http.py
 
 Server lắng nghe ở 0.0.0.0:5000 — các máy client trỏ tới:
     http://<địa-chỉ-IP-máy-server>:5000
@@ -31,10 +32,13 @@ Luồng hoạt động mỗi vòng:
 """
 
 import os
+import sys
 import threading
 
 import numpy as np
 from flask import Flask, jsonify, request
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cau_hinh import CauHinh as cfg
 from client.mo_hinh import do_chinh_xac, huan_luyen_cuc_bo, so_tham_so
@@ -50,7 +54,7 @@ app = Flask(__name__)
 def _doi_hoi_file(ten_file):
     if not os.path.exists(ten_file):
         raise SystemExit(
-            f"Thiếu file {ten_file} — chạy `python chuan_bi_du_lieu.py` một lần trước "
+            f"Thiếu file {ten_file} — chạy `python trien_khai_http/chuan_bi_du_lieu.py` một lần trước "
             f"để tạo dữ liệu warm-up/test/validation cho server."
         )
     return np.load(ten_file)

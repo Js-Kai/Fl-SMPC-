@@ -1,5 +1,5 @@
 """
-xem_du_lieu_server.py — Chạy hệ thống và in chi tiết dữ liệu server nhận được mỗi vòng.
+mo_phong/xem_du_lieu_server.py — Chạy hệ thống và in chi tiết dữ liệu server nhận mỗi vòng.
 
 Khác với chay.py (chỉ in 1 dòng tóm tắt/vòng), file này in ra:
   - từng gói (S, C, proof, Δw̃) mà mỗi client gửi lên server
@@ -7,10 +7,15 @@ Khác với chay.py (chỉ in 1 dòng tóm tắt/vòng), file này in ra:
   - client nào được nhận / bị loại và lý do
   - trạng thái mô hình toàn cục trước và sau khi tổng hợp
 
-Chạy:  python xem_du_lieu_server.py
+Chạy (từ thư mục gốc dự án):  python mo_phong/xem_du_lieu_server.py
 """
 
+import os
+import sys
+
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cau_hinh import CauHinh as cfg
 from dataset import nap_va_chia_du_lieu
@@ -105,7 +110,7 @@ def main():
     if cfg.SO_VONG > SO_VONG_XEM:
         print("-" * 78)
         print(f"(chỉ in chi tiết {SO_VONG_XEM} vòng đầu; sửa SO_VONG_XEM trong file này "
-              f"nếu muốn xem thêm — chạy python chay.py để xem tóm tắt đủ {cfg.SO_VONG} vòng)")
+              f"nếu muốn xem thêm — chạy python mo_phong/chay.py để xem tóm tắt đủ {cfg.SO_VONG} vòng)")
 
 
 if __name__ == "__main__":

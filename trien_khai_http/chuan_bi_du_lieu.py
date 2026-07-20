@@ -4,8 +4,12 @@ chuan_bi_du_lieu.py — Chạy MỘT LẦN để tách dữ liệu thành file .
 Đây là bước "chuẩn bị hạ tầng" mô phỏng thực tế: mỗi client (VD mỗi bệnh viện)
 vốn đã có sẵn dữ liệu riêng của họ trên máy của họ, không ai gửi cho ai.
 
-Chạy (1 lần, ở đâu cũng được, miễn có sẵn dataset/):
-    python chuan_bi_du_lieu.py
+Chạy (1 lần, TỪ THƯ MỤC GỐC dự án, để dataset/ nằm trong tầm với):
+    python trien_khai_http/chuan_bi_du_lieu.py
+
+Các file .npz sinh ra nằm ở thư mục đang đứng (thư mục gốc dự án), KHÔNG
+nằm trong trien_khai_http/ — để server_http.py (chạy cùng cách) tìm thấy
+đúng chỗ.
 
 Sinh ra:
     du_lieu_server.npz       -> giữ lại ở máy SERVER (warm-up + test + metadata)
@@ -20,7 +24,12 @@ du_lieu_client_*.npz khỏi máy server — đúng tinh thần "dữ liệu khô
 khỏi máy sở hữu nó", server chỉ nên giữ du_lieu_server.npz + du_lieu_validation.npz.
 """
 
+import os
+import sys
+
 import numpy as np
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from cau_hinh import CauHinh as cfg
 from dataset import nap_va_chia_du_lieu

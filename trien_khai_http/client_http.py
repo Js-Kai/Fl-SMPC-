@@ -1,24 +1,28 @@
 """
-client_http.py — Client THẬT chạy qua HTTP, dùng trên MÁY/MÁY ẢO riêng biệt.
+trien_khai_http/client_http.py — Client THẬT chạy qua HTTP, dùng trên MÁY/MÁY ẢO riêng biệt.
 
 Cài đặt (trên mỗi máy client):
     pip install requests numpy
 
-Chạy (thay <client_id> = 0..4 và <dia_chi_server> = IP máy server):
-    python client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]
+Chạy (thay <client_id> = 0..4 và <dia_chi_server> = IP máy server; đứng ở
+thư mục gốc dự án, hoặc thư mục chứa file .npz riêng của client này):
+    python trien_khai_http/client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]
 
 Ví dụ (client số 2, server ở 192.168.1.10 cổng 5000):
-    python client_http.py 2 http://192.168.1.10:5000
+    python trien_khai_http/client_http.py 2 http://192.168.1.10:5000
 
 Mặc định đọc dữ liệu riêng từ file "du_lieu_client_<client_id>.npz" nằm
-CÙNG THƯ MỤC với script này. File này KHÔNG lấy qua mạng — nó phải được
-copy sẵn vào máy client bằng tay/USB/scp (chạy chuan_bi_du_lieu.py ở máy
-chuẩn bị dữ liệu để tạo ra các file này, xem hướng dẫn trong file đó).
-Đây là điểm khác biệt quan trọng so với bản demo: dữ liệu riêng của client
-không bao giờ rời khỏi máy client hay đi qua server.
+Ở THƯ MỤC ĐANG ĐỨNG khi chạy lệnh (không phải thư mục chứa script). File
+này KHÔNG lấy qua mạng — nó phải được copy sẵn vào máy client bằng tay/
+USB/scp (chạy chuan_bi_du_lieu.py ở máy chuẩn bị dữ liệu để tạo ra các
+file này, xem hướng dẫn trong file đó). Đây là điểm khác biệt quan trọng
+so với bản demo: dữ liệu riêng của client không bao giờ rời khỏi máy
+client hay đi qua server.
 
-Máy này KHÔNG cần dataset/ hay server/ — chỉ cần client/, nen_mat_ma.py,
-giao_tiep.py, file .npz riêng của nó, và file client_http.py này.
+Khi triển khai thật trên 1 máy ảo riêng, chỉ cần copy sang đó: thư mục
+client/, file nen_mat_ma.py, thư mục trien_khai_http/ (chứa client_http.py
++ giao_tiep.py), và ĐÚNG 1 file du_lieu_client_<id>.npz — giữ nguyên cấu
+trúc thư mục tương đối này rồi chạy lệnh y hệt như trên.
 """
 
 import os
@@ -26,6 +30,8 @@ import sys
 
 import numpy as np
 import requests
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from client import Client
 from giao_tiep import goi_to_json, mo_hinh_from_json
@@ -44,8 +50,8 @@ class _Cfg:
 
 def main():
     if len(sys.argv) < 3:
-        print("Dùng: python client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]")
-        print("Ví dụ: python client_http.py 0 http://192.168.1.10:5000")
+        print("Dùng: python trien_khai_http/client_http.py <client_id> <dia_chi_server> [duong_dan_file_npz]")
+        print("Ví dụ: python trien_khai_http/client_http.py 0 http://192.168.1.10:5000")
         sys.exit(1)
 
     client_id = int(sys.argv[1])
