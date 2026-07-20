@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sơ đồ triển khai — FL-SMPC++</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --ink0:#242320;
+    --muted: #6b6a63; --line: #e5e3da; --accent: #1f6e56; --accent-bg:#e1f5ee;
+    --client:#185fa5; --client-bg:#e6f1fb; --server:#993c1d; --server-bg:#faece7;
+    --data:#5f5e5a; --data-bg:#f1efe8; --shared:#7a5c1e; --shared-bg:#fbf1de;
+    --code-bg:#f4f4f2; --arrow:#b8b6ac;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg); color: var(--ink0); line-height: 1.7;
+    max-width: 960px; margin: 0 auto; padding: 40px 24px 80px;
+  }
+  h1 { font-size: 30px; font-weight: 600; margin: 0 0 6px; }
+  h2 { font-size: 22px; font-weight: 600; margin: 48px 0 16px; color: var(--accent);
+       border-bottom: 2px solid var(--accent-bg); padding-bottom: 8px; }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 30px; }
+  p { margin: 10px 0; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+         font-family: "SF Mono", Consolas, monospace; font-size: 13.5px; }
+
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px;
+         font-size: 12px; font-weight: 600; margin-left: 8px; vertical-align: middle; }
+  .tag-client { background: var(--client-bg); color: var(--client); }
+  .tag-server { background: var(--server-bg); color: var(--server); }
+  .tag-data { background: var(--data-bg); color: var(--data); }
+  .tag-shared { background: var(--shared-bg); color: var(--shared); }
+
+  /* ---------- legend ---------- */
+  .legend { display:flex; gap:18px; flex-wrap:wrap; margin: 6px 0 10px; font-size: 13.5px; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .dot { width:12px; height:12px; border-radius:3px; display:inline-block; }
+  .dot-client{ background:var(--client);} .dot-server{background:var(--server);}
+  .dot-data{background:var(--data);} .dot-shared{background:var(--shared);}
+
+  /* ---------- flow diagram (vertical) ---------- */
+  .flowchart { display:flex; flex-direction:column; align-items:stretch; margin: 20px 0; }
+  .fbox {
+    border-radius: 12px; padding: 14px 20px; border: 1.5px solid var(--line);
+    background: var(--card); position: relative;
+  }
+  .fbox .file { font-family: "SF Mono", Consolas, monospace; font-size: 12.5px;
+                color: var(--muted); margin-top: 2px; }
+  .fbox b.title { font-size: 15px; }
+  .fbox.shared { background: var(--shared-bg); border-color: #e8d6a8; }
+  .fbox.data { background: var(--data-bg); border-color: #dedad0; }
+  .fbox.client { background: var(--client-bg); border-color: #c6dcf2; }
+  .fbox.server { background: var(--server-bg); border-color: #f0cfc0; }
+  .fbox.loop-outer { background: #fff; border: 2px dashed #c8c6ba; padding: 22px 22px 14px; }
+
+  .arrow-down { display:flex; justify-content:center; align-items:center; height: 30px; }
+  .arrow-down::after {
+    content: ""; width: 0; height: 0; border-left: 7px solid transparent;
+    border-right: 7px solid transparent; border-top: 10px solid var(--arrow);
+  }
+  .arrow-down.line::before {
+    content:""; position:absolute;
+  }
+  .arrow-line { width: 2px; background: var(--arrow); height: 20px; margin: 0 auto; }
+
+  .step-num {
+    position:absolute; left:-14px; top:-14px; width:30px; height:30px;
+    background: var(--accent); color:#fff; border-radius:50%; display:flex;
+    align-items:center; justify-content:center; font-size:14px; font-weight:700;
+    box-shadow: 0 0 0 3px var(--bg);
+  }
+  .step-num.c { background: var(--client); }
+  .step-num.s { background: var(--server); }
+  .step-num.d { background: var(--data); }
+  .step-num.sh { background: var(--shared); }
+
+  .substeps { list-style:none; padding:0; margin: 8px 0 0; }
+  .substeps li { font-size: 13.5px; padding: 3px 0 3px 22px; position:relative; color:#3a3936; }
+  .substeps li::before { content: "→"; position:absolute; left:0; color: var(--arrow); font-weight:700; }
+  .substeps li code { font-size: 12.5px; }
+
+  .loop-label {
+    display:inline-block; background:#fff; border:2px dashed #c8c6ba; color:var(--muted);
+    font-size:12px; font-weight:700; padding: 2px 12px; border-radius: 20px;
+    position:absolute; top:-13px; left:22px;
+  }
+  .loop-back {
+    text-align:center; color: var(--muted); font-size: 13px; margin-top: 10px;
+    font-style: italic;
+  }
+
+  .side-by-side { display:flex; gap:16px; }
+  .side-by-side .fbox { flex:1; }
+
+  .note { background: #fff8e6; border-left: 4px solid #ba7517; padding: 12px 16px;
+          border-radius: 0 8px 8px 0; margin: 20px 0; font-size: 14.5px; }
+
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Sơ đồ triển khai — FL-SMPC++</h1>
+<p class="sub">Thứ tự thực thi thật của các file khi chạy <code>python chay.py</code> — file nào gọi file nào, theo đúng trình tự thời gian.</p>
+
+<div class="legend">
+  <span><i class="dot dot-shared"></i> Dùng chung (gốc)</span>
+  <span><i class="dot dot-data"></i> dataset/</span>
+  <span><i class="dot dot-client"></i> client/</span>
+  <span><i class="dot dot-server"></i> server/</span>
+</div>
+
+<h2>1. Sơ đồ tổng quan — ai gọi ai</h2>
+<div class="flowchart">
+
+  <div class="fbox shared" style="position:relative;">
+    <span class="step-num sh">0</span>
+    <b class="title">chay.py</b> <span class="tag tag-shared">điều phối</span>
+    <div class="file">bộ điều phối — không chứa logic, chỉ ghép mọi thứ lại</div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+
+  <div class="side-by-side">
+    <div class="fbox shared" style="position:relative;">
+      <span class="step-num sh">·</span>
+      <b class="title">cau_hinh.py</b> <span class="tag tag-shared">config</span>
+      <div class="file">CauHinh — mọi tham số hệ thống</div>
+    </div>
+    <div class="fbox shared" style="position:relative;">
+      <span class="step-num sh">·</span>
+      <b class="title">nen_mat_ma.py</b> <span class="tag tag-shared">crypto</span>
+      <div class="file">Pedersen commitment + Schnorr ZKP (secp256k1)</div>
+    </div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+
+  <div class="fbox data" style="position:relative;">
+    <span class="step-num d">1</span>
+    <b class="title">dataset/du_lieu.py</b> <span class="tag tag-data">dataset</span>
+    <div class="file">nap_va_chia_du_lieu() → clients[], validation, warmup, test</div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+
+  <div class="side-by-side">
+    <div class="fbox client" style="position:relative;">
+      <span class="step-num c">2</span>
+      <b class="title">client/client.py</b> <span class="tag tag-client">Client</span>
+      <div class="file">tạo 1 đối tượng Client cho mỗi client_id</div>
+      <ul class="substeps">
+        <li>dùng <code>client/mo_hinh.py</code> để huấn luyện</li>
+        <li>dùng <code>client/smpc.py</code> để che dữ liệu</li>
+        <li>dùng <code>nen_mat_ma.py</code> để niêm phong + ZKP</li>
+      </ul>
+    </div>
+    <div class="fbox server" style="position:relative;">
+      <span class="step-num s">3</span>
+      <b class="title">server/server.py</b> <span class="tag tag-server">Server</span>
+      <div class="file">tạo 1 đối tượng Server, nhận mô hình khởi tạo (warm-up)</div>
+      <ul class="substeps">
+        <li>dùng <code>nen_mat_ma.py</code> để xác minh ZKP</li>
+      </ul>
+    </div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+
+  <div class="fbox loop-outer" style="position:relative;">
+    <span class="loop-label">LẶP LẠI mỗi vòng — for vong in 1..SO_VONG</span>
+
+    <div class="fbox client" style="position:relative; margin-bottom:0;">
+      <span class="step-num c">4</span>
+      <b class="title">Client.chay_mot_vong()</b> <span class="tag tag-client">mỗi client</span>
+      <ul class="substeps">
+        <li>Bước 1: <code>mo_hinh.py::huan_luyen_cuc_bo()</code> → Δw</li>
+        <li>Bước 2: nếu độc hại → bóp méo Δw (đảo nhãn)</li>
+        <li>Bước 3: <code>nen_mat_ma.py::Pedersen.commit()</code> → C</li>
+        <li>Bước 4: <code>mo_hinh.py::do_chinh_xac()</code> trên tập validation → S</li>
+        <li>Bước 5: <code>nen_mat_ma.py::SchnorrZKP.prove()</code> → proof</li>
+        <li>Bước 6: <code>smpc.py::tao_mat_na()</code> → Δw̃ (đã che)</li>
+      </ul>
+      <div class="loop-back">gửi gói (S, C, proof, Δw̃) lên server ↓</div>
+    </div>
+
+    <div class="arrow-line"></div><div class="arrow-down"></div>
+
+    <div class="fbox server" style="position:relative; margin-bottom:0;">
+      <span class="step-num s">5</span>
+      <b class="title">Server.tong_hop_mot_vong()</b> <span class="tag tag-server">1 lần / vòng</span>
+      <ul class="substeps">
+        <li>Cửa 1: <code>SchnorrZKP.verify()</code> — proof có hợp lệ?</li>
+        <li>Cửa 2: đối chiếu vân tay (fingerprint) — bắt bất nhất</li>
+        <li>Cửa 3: lọc theo điểm validation S ≥ θ (NGUONG_VALIDATION)</li>
+        <li>Kiểm quorum — đủ client hợp lệ chưa?</li>
+        <li>Tổng hợp: cộng các Δw̃ đã che (nhiễu tự triệt tiêu)</li>
+        <li>Cập nhật mô hình toàn cục</li>
+      </ul>
+    </div>
+
+    <div class="loop-back" style="margin-top:14px;">↩ mô hình mới được phát lại cho client ở vòng kế tiếp</div>
+  </div>
+
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+
+  <div class="fbox shared" style="position:relative;">
+    <span class="step-num sh">6</span>
+    <b class="title">chay.py</b> <span class="tag tag-shared">kết thúc</span>
+    <div class="file">in test accuracy cuối cùng sau SO_VONG vòng</div>
+  </div>
+</div>
+
+<h2>2. Trình tự thực thi từng dòng lệnh (chay.py)</h2>
+<table>
+<tr><th>#</th><th>Trong chay.py</th><th>File thực sự chạy</th><th>Kết quả trả về</th></tr>
+<tr><td>1</td><td><code>from cau_hinh import CauHinh as cfg</code></td><td><code>cau_hinh.py</code></td><td>toàn bộ tham số hệ thống</td></tr>
+<tr><td>2</td><td><code>nap_va_chia_du_lieu(...)</code></td><td><code>dataset/du_lieu.py</code></td><td>clients[], validation, warmup, test</td></tr>
+<tr><td>3</td><td><code>Client(client_id=i, ...)</code> ×N</td><td><code>client/client.py</code></td><td>danh sách đối tượng Client</td></tr>
+<tr><td>4</td><td><code>huan_luyen_cuc_bo(...)</code> (warm-up)</td><td><code>client/mo_hinh.py</code></td><td>mô hình toàn cục khởi tạo</td></tr>
+<tr><td>5</td><td><code>Server(mo_hinh, ...)</code></td><td><code>server/server.py</code></td><td>đối tượng Server</td></tr>
+<tr><td>6</td><td><b>vòng lặp:</b> <code>c.chay_mot_vong(...)</code> ×N client</td><td><code>client.py</code> → <code>mo_hinh.py</code>, <code>smpc.py</code>, <code>nen_mat_ma.py</code></td><td>N gói (S, C, proof, Δw̃)</td></tr>
+<tr><td>7</td><td><code>server.tong_hop_mot_vong(cac_goi)</code></td><td><code>server.py</code> → <code>nen_mat_ma.py</code></td><td>mô hình toàn cục đã cập nhật</td></tr>
+<tr><td>8</td><td><code>do_chinh_xac(server.mo_hinh, ...)</code></td><td><code>client/mo_hinh.py</code></td><td>test accuracy để in ra màn hình</td></tr>
+<tr><td>9</td><td>lặp lại bước 6–8 cho đến hết <code>SO_VONG</code> vòng</td><td>—</td><td>in kết quả cuối cùng</td></tr>
+</table>
+
+<h2>3. Phụ thuộc import giữa các file</h2>
+<div class="flowchart">
+  <div class="fbox shared"><b class="title">chay.py</b>
+    <div class="file">import cau_hinh, dataset, client, client.mo_hinh, server</div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+  <div class="side-by-side">
+    <div class="fbox client"><b class="title">client/client.py</b>
+      <div class="file">import nen_mat_ma, client.mo_hinh, client.smpc</div>
+    </div>
+    <div class="fbox server"><b class="title">server/server.py</b>
+      <div class="file">import nen_mat_ma</div>
+    </div>
+  </div>
+  <div class="arrow-line"></div><div class="arrow-down"></div>
+  <div class="fbox shared"><b class="title">nen_mat_ma.py</b>
+    <div class="file">chỉ dùng hashlib, secrets — không phụ thuộc file nào khác trong dự án</div>
+  </div>
+</div>
+
+<div class="note">
+<b>Cách đọc sơ đồ:</b> khối màu vàng nâu (dùng chung) luôn chạy trước và không phụ thuộc thư mục nào. Khối màu xám (dataset) chạy một lần duy nhất lúc khởi động. Khối xanh (client) và khối cam (server) nằm trong <b>vòng lặp có khung nét đứt</b> — chạy đi chạy lại <code>SO_VONG</code> lần, mỗi lần client chạy trước rồi gửi gói lên cho server xử lý.
+</div>
+
+<p style="margin-top:40px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--line); padding-top:16px;">
+Xem <code>HUONG_DAN.html</code> để biết giải thích chi tiết ý nghĩa từng bước và cách chỉnh sửa tham số.
+</p>
+
+</body>
+</html>

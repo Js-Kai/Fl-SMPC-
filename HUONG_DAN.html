@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hướng dẫn — FL-SMPC++ theo Hình 3</title>
+<style>
+  :root {
+    --bg: #faf9f5; --card: #ffffff; --ink: #24232049; --ink0:#242320;
+    --muted: #6b6a63; --line: #e5e3da; --accent: #1f6e56; --accent-bg:#e1f5ee;
+    --client:#185fa5; --client-bg:#e6f1fb; --server:#993c1d; --server-bg:#faece7;
+    --data:#5f5e5a; --data-bg:#f1efe8; --code-bg:#f4f4f2;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: var(--bg); color: var(--ink0); line-height: 1.7;
+    max-width: 900px; margin: 0 auto; padding: 40px 24px 80px;
+  }
+  h1 { font-size: 30px; font-weight: 600; margin: 0 0 6px; }
+  h2 { font-size: 22px; font-weight: 600; margin: 44px 0 14px; color: var(--accent);
+       border-bottom: 2px solid var(--accent-bg); padding-bottom: 8px; }
+  h3 { font-size: 17px; font-weight: 600; margin: 26px 0 10px; }
+  .sub { color: var(--muted); font-size: 15px; margin-bottom: 30px; }
+  p { margin: 12px 0; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px;
+         font-family: "SF Mono", Consolas, monospace; font-size: 13.5px; }
+  pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px;
+        overflow-x: auto; border: 1px solid var(--line); }
+  pre code { background: none; padding: 0; font-size: 13px; }
+  .card { background: var(--card); border: 1px solid var(--line);
+          border-radius: 12px; padding: 4px 22px; margin: 16px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+  th { background: var(--accent-bg); color: var(--accent); font-weight: 600; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 20px;
+         font-size: 12.5px; font-weight: 600; }
+  .tag-client { background: var(--client-bg); color: var(--client); }
+  .tag-server { background: var(--server-bg); color: var(--server); }
+  .tag-data { background: var(--data-bg); color: var(--data); }
+  .tree { font-family: "SF Mono", Consolas, monospace; font-size: 13.5px;
+          line-height: 1.9; background: var(--card); border: 1px solid var(--line);
+          border-radius: 12px; padding: 18px 22px; }
+  .tree .f-data { color: var(--data); font-weight: 600; }
+  .tree .f-client { color: var(--client); font-weight: 600; }
+  .tree .f-server { color: var(--server); font-weight: 600; }
+  .tree .cmt { color: var(--muted); }
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 8px 0 8px 44px; }
+  .steps li::before { content: counter(step); position: absolute; left: 0; top: 8px;
+    width: 28px; height: 28px; background: var(--accent); color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; }
+  .flow { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0; }
+  .flow-col { flex: 1; min-width: 240px; border-radius: 12px; padding: 16px 18px; }
+  .flow-client { background: var(--client-bg); }
+  .flow-server { background: var(--server-bg); }
+  .flow-col h4 { margin: 0 0 10px; font-size: 15px; }
+  .flow-client h4 { color: var(--client); }
+  .flow-server h4 { color: var(--server); }
+  .flow-col ol { margin: 0; padding-left: 20px; font-size: 14px; }
+  .flow-col li { margin: 5px 0; }
+  .note { background: #fff8e6; border-left: 4px solid #ba7517; padding: 12px 16px;
+          border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14.5px; }
+  .warn { background: #faece7; border-left: 4px solid #993c1d; padding: 12px 16px;
+          border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 14.5px; }
+  kbd { background: #fff; border: 1px solid var(--line); border-bottom-width: 2px;
+        border-radius: 5px; padding: 1px 7px; font-size: 13px; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h1>FL-SMPC++ — Tái dựng theo Hình 3</h1>
+<p class="sub">Hệ thống được chia thành 3 thư mục rõ ràng: <b>dataset</b>, <b>client</b>, <b>server</b> — để dễ hiểu và dễ chỉnh sửa.</p>
+
+<div class="card">
+<p style="margin:16px 0;"><b>Chạy nhanh:</b> mở terminal trong thư mục này rồi gõ:</p>
+<pre><code>python chay.py</code></pre>
+<p style="margin:16px 0;">Cần <code>numpy</code> và <code>scikit-learn</code>. Chạy khoảng 40 giây, in ra từng vòng huấn luyện.</p>
+</div>
+
+<h2>1. Cấu trúc thư mục</h2>
+<p>Ba thư mục màu tương ứng ba phần của Hình 3. Các file ở gốc là phần dùng chung.</p>
+
+<div class="tree">
+flsmpcpp_hinh3/<br>
+├── <b>HUONG_DAN.html</b> <span class="cmt">← file bạn đang đọc</span><br>
+├── <b>chay.py</b> <span class="cmt">← chạy file này để khởi động hệ thống</span><br>
+├── <b>cau_hinh.py</b> <span class="cmt">← MỌI tham số ở đây, sửa gì thì sửa file này</span><br>
+├── <b>nen_mat_ma.py</b> <span class="cmt">← mật mã dùng chung (Pedersen + Schnorr)</span><br>
+├── <span class="f-data">dataset/</span> <span class="cmt">← DỮ LIỆU (đáy Hình 3)</span><br>
+│   ├── du_lieu.py <span class="cmt">nạp + chia dữ liệu IID/non-IID</span><br>
+│   └── README.md<br>
+├── <span class="f-client">client/</span> <span class="cmt">← PHÍA CLIENT (nửa trên Hình 3)</span><br>
+│   ├── mo_hinh.py <span class="cmt">mô hình + huấn luyện → Δw</span><br>
+│   ├── smpc.py <span class="cmt">che bản cập nhật bằng nhiễu</span><br>
+│   ├── client.py <span class="cmt">lớp Client: ghép 6 bước</span><br>
+│   └── README.md<br>
+└── <span class="f-server">server/</span> <span class="cmt">← PHÍA SERVER (nửa dưới Hình 3)</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;├── server.py <span class="cmt">lọc client + tổng hợp + cập nhật</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;└── README.md
+</div>
+
+<h2>2. Luồng hoạt động (Hình 3)</h2>
+<p>Mỗi vòng huấn luyện, dữ liệu chạy từ client sang server theo luồng sau:</p>
+
+<div class="flow">
+  <div class="flow-col flow-client">
+    <h4>PHÍA CLIENT (mỗi client tự làm)</h4>
+    <ol>
+      <li>Huấn luyện cục bộ trên dữ liệu riêng → <code>Δw</code></li>
+      <li><i>(nếu độc hại)</i> bóp méo <code>Δw</code></li>
+      <li>Niêm phong bằng Pedersen → <code>C</code></li>
+      <li>Chấm điểm trên validation chung → <code>S</code></li>
+      <li>Sinh chứng minh ZKP</li>
+      <li>Che bằng SMPC → <code>Δw̃</code></li>
+    </ol>
+    <p style="margin:10px 0 0;font-size:13px;">Gửi gói <code>(S, C, ZKP, Δw̃)</code> ↓</p>
+  </div>
+  <div class="flow-col flow-server">
+    <h4>PHÍA SERVER (aggregator)</h4>
+    <ol>
+      <li>Cửa 1: xác minh ZKP</li>
+      <li>Cửa 2: đối chiếu vân tay commitment</li>
+      <li>Cửa 3: lọc theo điểm validation <code>S ≥ θ</code></li>
+      <li>Kiểm quorum (đủ client hợp lệ?)</li>
+      <li>Tổng hợp SMPC (nhiễu triệt tiêu)</li>
+      <li>Cập nhật mô hình toàn cục</li>
+    </ol>
+    <p style="margin:10px 0 0;font-size:13px;">Phát mô hình mới cho client → vòng sau</p>
+  </div>
+</div>
+
+<h2>3. File nào làm gì</h2>
+<table>
+<tr><th>File</th><th>Thuộc</th><th>Nhiệm vụ</th></tr>
+<tr><td><code>dataset/du_lieu.py</code></td><td><span class="tag tag-data">dataset</span></td><td>Nạp dữ liệu, chia cho client, tạo tập validation chung + warm-up</td></tr>
+<tr><td><code>client/mo_hinh.py</code></td><td><span class="tag tag-client">client</span></td><td>Mô hình softmax + huấn luyện cục bộ, sinh ra Δw</td></tr>
+<tr><td><code>client/smpc.py</code></td><td><span class="tag tag-client">client</span></td><td>Che Δw bằng mặt nạ nhiễu triệt tiêu</td></tr>
+<tr><td><code>client/client.py</code></td><td><span class="tag tag-client">client</span></td><td>Lớp <code>Client</code> — ghép đủ 6 bước phía client</td></tr>
+<tr><td><code>server/server.py</code></td><td><span class="tag tag-server">server</span></td><td>Lớp <code>Server</code> — 3 cửa lọc + tổng hợp + cập nhật mô hình</td></tr>
+<tr><td><code>nen_mat_ma.py</code></td><td>chung</td><td>Pedersen commitment + Schnorr ZKP trên secp256k1</td></tr>
+<tr><td><code>cau_hinh.py</code></td><td>chung</td><td>Tất cả tham số (số client, ngưỡng, kiểu tấn công...)</td></tr>
+<tr><td><code>chay.py</code></td><td>chung</td><td>Ghép mọi thứ lại và chạy vòng lặp</td></tr>
+</table>
+
+<h2>4. Cách chỉnh sửa thường gặp</h2>
+
+<h3>Đổi tham số (dễ nhất — không đụng code logic)</h3>
+<p>Mở <code>cau_hinh.py</code>, sửa giá trị rồi chạy lại. Ví dụ:</p>
+<pre><code>SO_CLIENT = 20            # tăng lên 20 client
+CLIENT_DOC_HAI = [0,1,2,3,4,5]  # 30% của 20 = 6 kẻ độc hại
+NGUONG_VALIDATION = 0.6   # siết ngưỡng lọc
+NON_IID = False           # đổi sang chia đều (IID)</code></pre>
+
+<h3>Đổi sang dữ liệu thật (MNIST, CIFAR...)</h3>
+<p>Mở <code>dataset/du_lieu.py</code>, sửa <b>duy nhất</b> hàm <code>_nap_goc()</code>. Xem hướng dẫn chi tiết trong <code>dataset/README.md</code>.</p>
+
+<h3>Đổi mô hình sang CNN</h3>
+<p>Mở <code>client/mo_hinh.py</code>. Chỉ cần giữ nguyên "giao diện": hàm <code>huan_luyen_cuc_bo(...)</code> phải trả về véc-tơ phẳng <code>Δw</code>. Phần mật mã và SMPC không cần đổi.</p>
+
+<h3>Thêm kiểu tấn công mới</h3>
+<p>Mở <code>client/client.py</code>, trong phương thức <code>chay_mot_vong()</code> thêm nhánh xử lý cho kiểu tấn công của bạn (hiện có sẵn <code>dao_nhan</code>).</p>
+
+<h2>5. Đọc kết quả</h2>
+<p>Mỗi dòng khi chạy có dạng:</p>
+<pre><code>Vòng  5 | nhận 7/10 client | loại 3/3 kẻ độc hại | test acc = 88.9%</code></pre>
+<ul>
+  <li><b>nhận 7/10</b>: server chấp nhận 7 trong 10 client (3 kẻ độc hại bị loại)</li>
+  <li><b>loại 3/3 kẻ độc hại</b>: cả 3 kẻ đảo nhãn đều bị chặn</li>
+  <li><b>test acc</b>: độ chính xác mô hình toàn cục trên tập kiểm tra</li>
+</ul>
+
+<div class="note">
+<b>Có thể bạn sẽ thấy:</b> ở các vòng sau, cột "loại" tụt từ <code>3/3</code> xuống <code>2/3</code> hoặc <code>1/3</code> — một kẻ gian lọt qua. Đây <b>không phải lỗi</b>. Khi mô hình toàn cục mạnh dần, mô hình đảo nhãn của kẻ gian cũng đạt điểm validation cao hơn và vượt ngưỡng cố định <code>θ=0.55</code>. Đây chính là điểm yếu của ngưỡng tuyệt đối mà bài báo dùng.
+</div>
+
+<div class="warn">
+<b>Lưu ý trung thực về Cửa 2:</b> khi client che <code>Δw</code> bằng SMPC, vân tay của bản đã che khác vân tay bản gốc đã cam kết — nên Cửa 2 (đối chiếu vân tay) không dùng được nguyên trạng. Đây là một <b>khoảng hở thật</b> trong thiết kế bài báo: ZKP chứng minh "biết cách mở commitment" chứ không chứng minh "bản đã che chính là bản đã cam kết". Xem <code>server/README.md</code> để hiểu rõ hơn. Trong bản demo, Cửa 1 (ZKP) và Cửa 3 (validation) gánh phần lọc chính.
+</div>
+
+<h2>6. Bản đồ tới bài báo</h2>
+<table>
+<tr><th>Trong bài báo</th><th>Trong code này</th></tr>
+<tr><td>Section 4.1 — Warm-up initialization</td><td><code>chay.py</code> phần warm-up + <code>dataset</code> tập warmup</td></tr>
+<tr><td>Section 4.2.1 — Local training</td><td><code>client/mo_hinh.py</code></td></tr>
+<tr><td>Section 4.2.2 — Pedersen commitment + ZKP</td><td><code>client/client.py</code> + <code>nen_mat_ma.py</code></td></tr>
+<tr><td>Section 4.3 — Dynamic client filtering</td><td><code>server/server.py</code> (3 cửa lọc)</td></tr>
+<tr><td>Section 4.4.1 — Adaptive noise masking (SMPC)</td><td><code>client/smpc.py</code></td></tr>
+<tr><td>Section 4.4.2 — Dropout-resilient aggregation</td><td><code>server/server.py</code> (kiểm quorum)</td></tr>
+</table>
+
+<p style="margin-top:40px; color:var(--muted); font-size:13.5px; border-top:1px solid var(--line); padding-top:16px;">
+Bản tái dựng dùng mô hình softmax thay CNN và bộ dữ liệu digits thay MNIST/CIFAR để chạy nhanh không cần GPU. Mọi cơ chế bảo mật (Pedersen, ZKP, SMPC, lọc) đều chạy thật. Con số tuyệt đối khác bài báo; xu hướng so sánh thì giữ nguyên.
+</p>
+
+</body>
+</html>
